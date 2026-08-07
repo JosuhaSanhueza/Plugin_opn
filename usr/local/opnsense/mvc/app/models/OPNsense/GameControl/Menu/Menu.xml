@@ -2,9 +2,11 @@
     <Services>
         <GameControl VisibleName="Escolarapp Game Manager" cssClass="fa fa-gamepad" order="500">
             <General url="/ui/gamecontrol" VisibleName="Control Modular"/>
+            <Guide url="/ui/gamecontrol#guide" VisibleName="Guía de Configuración"/>
         </GameControl>
     </Services>
 </menu>
+
 
 
 

@@ -62,14 +62,15 @@ def get_unbound_dnsbl_game_domains(root):
                 log_msg(f"Buscando URL de GitHub en DNSBL: {elem.text}")
                 domains.update(parse_hosts_from_github(elem.text))
 
-    # 3. Fallback a la URL por defecto si no se encontró en config.xml
+    # 3. Fallback a la URL por defecto oficial del usuario si no se detectó en config.xml
     if not domains:
         gc_url = root.find('.//OPNsense/GameControl/general/github_url')
-        url_to_use = gc_url.text if (gc_url is not None and gc_url.text) else "https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/gambling-only/hosts"
-        log_msg(f"Usando URL de respaldo por defecto: {url_to_use}")
+        url_to_use = gc_url.text if (gc_url is not None and gc_url.text) else "https://raw.githubusercontent.com/JosuhaSanhueza/BlockList/refs/heads/main/GamesBlockList.txt"
+        log_msg(f"Descargando lista oficial de juegos desde GitHub: {url_to_use}")
         domains.update(parse_hosts_from_github(url_to_use))
 
-    return domains
+    return domains, url_to_use if 'url_to_use' in locals() else "https://raw.githubusercontent.com/JosuhaSanhueza/BlockList/refs/heads/main/GamesBlockList.txt"
+
 
 
 def log_msg(msg):
@@ -92,8 +93,9 @@ def generate_unbound_rules():
     tree = ET.parse(CONFIG_PATH)
     root = tree.getroot()
     
-    blocked_domains = get_unbound_dnsbl_game_domains(root)
-    log_msg(f"Se obtuvieron {len(blocked_domains)} dominios de la lista de juegos de GitHub/DNSBL.")
+    blocked_domains, list_url = get_unbound_dnsbl_game_domains(root)
+    log_msg(f"Se obtuvieron {len(blocked_domains)} dominios de juegos desde: {list_url}")
+
 
     # Extraer IPs bloqueadas
     blocked_ips = []
