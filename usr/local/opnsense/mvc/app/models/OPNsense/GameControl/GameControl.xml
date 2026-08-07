@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model>
+    <mount>//OPNsense/GameControl</mount>
+    <version>1.0.0</version>
+    <description>Plugin para control modular DNS de juegos en OPNsense</description>
+    <items>
+        <general>
+            <enabled type="BooleanField">
+                <default>1</default>
+                <Required>Y</Required>
+            </enabled>
+            <github_url type="TextField">
+                <default>https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/gambling-only/hosts</default>
+                <Required>Y</Required>
+            </github_url>
+        </general>
+        <hosts>
+            <host type="ArrayField">
+                <ip type="TextField">
+                    <Required>Y</Required>
+                </ip>
+                <hostname type="TextField">
+                    <Required>N</Required>
+                </hostname>
+                <blocked type="BooleanField">
+                    <default>1</default>
+                    <Required>Y</Required>
+                </blocked>
+            </host>
+        </hosts>
+    </items>
+</model>

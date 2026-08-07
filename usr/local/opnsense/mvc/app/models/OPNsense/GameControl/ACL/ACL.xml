@@ -1,0 +1,10 @@
+<acl>
+    <page-gamecontrol>
+        <name>Services: Escolarapp Game Manager</name>
+        <description>Permite acceso al controlador modular DNS de juegos</description>
+        <patterns>
+            <pattern>ui/gamecontrol/*</pattern>
+            <pattern>api/gamecontrol/*</pattern>
+        </patterns>
+    </page-gamecontrol>
+</acl>

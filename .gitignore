@@ -1,0 +1,5 @@
+# Archivos de empaquetado temporal y binarios
+*.tar.gz
+*.pkg
++MANIFEST
+.DS_Store
