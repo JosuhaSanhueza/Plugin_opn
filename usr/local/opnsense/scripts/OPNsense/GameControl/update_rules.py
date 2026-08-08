@@ -155,17 +155,13 @@ def generate_unbound_rules():
         lines.append(f'    local-zone: "{domain}." transparent')
         lines.append(f'    access-control-tag-data: {domain}. "gaming_blocked" "always_refuse"')
 
-    os.makedirs(os.path.dirname(UNBOUND_RULES_PATH), exist_ok=True)
-    with open(UNBOUND_RULES_PATH, 'w') as f:
-        f.write("\n".join(lines))
-
-
-
-    # Escribir en runtime y plantilla oficial de OPNsense
+    # 3. Escribir en runtime e integrar la directiva de inclusión en unbound.conf
+    unbound_conf = '/var/unbound/unbound.conf'
+    include_line = 'include: /var/unbound/etc/gamecontrol.conf'
+    
     for rpath in [
         '/var/unbound/etc/gamecontrol.conf',
-        '/usr/local/etc/unbound/unbound.conf.d/gamecontrol.conf',
-        '/usr/local/opnsense/service/templates/OPNsense/Unbound/gamecontrol.conf'
+        '/usr/local/etc/unbound/unbound.conf.d/gamecontrol.conf'
     ]:
         try:
             os.makedirs(os.path.dirname(rpath), exist_ok=True)
@@ -174,25 +170,34 @@ def generate_unbound_rules():
         except Exception as e:
             pass
 
-    # Forzar recarga de plantilla en OPNsense
-    os.system('/usr/local/sbin/configctl template reload OPNsense/Unbound >/dev/null 2>&1')
+    # Asegurar que /var/unbound/unbound.conf contenga la instrucción include
+    if os.path.exists(unbound_conf):
+        try:
+            with open(unbound_conf, 'r') as f:
+                ucontent = f.read()
+            if include_line not in ucontent:
+                with open(unbound_conf, 'a') as f:
+                    f.write(f"\n{include_line}\n")
+                log_msg(f"Se insertó '{include_line}' en {unbound_conf}")
+        except Exception as e:
+            log_msg(f"Error actualizando {unbound_conf}: {e}")
 
-
-    # 3. Vaciar la caché DNS en memoria de Unbound para las IPs habilitadas
+    # 4. Vaciar la caché DNS en memoria de Unbound para las IPs habilitadas
     if unblocked_ips:
-        for domain in list(blocked_domains)[:50]:
+        for domain in list(blocked_domains)[:100]:
             os.system(f'/usr/local/sbin/unbound-control flush {domain} >/dev/null 2>&1')
 
-    # 4. Actualizar tabla dinamica del Cortafuegos (PF Table)
+    # 5. Actualizar tabla dinámica del Cortafuegos (PF Table)
     pf_table_file = '/var/etc/gamecontrol_pf_blocked.txt'
     with open(pf_table_file, 'w') as f:
         f.write("\n".join(blocked_ips_list))
 
     os.system(f'/sbin/pfctl -t game_blocked_ips -T replace -f {pf_table_file} >/dev/null 2>&1')
 
-    # 5. Reiniciar/Recargar Unbound de forma silenciosa
-    res = os.system('/usr/local/sbin/unbound-control reload >/dev/null 2>&1')
-    log_msg("Sincronización instantánea de Unbound y PF ejecutada exitosamente.")
+    # 6. Reiniciar/Recargar Unbound de forma silenciosa para procesar el include
+    res = os.system('/usr/local/sbin/unbound-control reload >/dev/null 2>&1 || /usr/local/sbin/pluginctl -s unbound restart')
+    log_msg("Sincronización nativa de Unbound e inclusión en unbound.conf ejecutada exitosamente.")
+
 
 
 
