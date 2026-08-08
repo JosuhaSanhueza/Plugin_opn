@@ -149,13 +149,27 @@ def generate_unbound_rules():
     with open(UNBOUND_RULES_PATH, 'w') as f:
         f.write("\n".join(lines))
 
-    log_msg("Archivo /usr/local/etc/unbound/gamecontrol.conf generado correctamente.")
+    # Asegurar que Unbound incluya gamecontrol.conf en sus rutas de runtime /var/unbound/etc/ e /usr/local/etc/unbound/unbound.conf.d/
+    unbound_runtime_paths = [
+        '/var/unbound/etc/gamecontrol.conf',
+        '/usr/local/etc/unbound/unbound.conf.d/gamecontrol.conf'
+    ]
+    for rpath in unbound_runtime_paths:
+        try:
+            os.makedirs(os.path.dirname(rpath), exist_ok=True)
+            with open(rpath, 'w') as f:
+                f.write("\n".join(lines))
+        except Exception as e:
+            log_msg(f"Aviso al escribir en {rpath}: {e}")
+
+    log_msg("Archivo de reglas de Unbound sincronizado correctamente en runtime.")
 
     res = os.system('/usr/local/sbin/unbound-control reload >/dev/null 2>&1 || /usr/local/sbin/pluginctl -s unbound restart')
     if res == 0:
         log_msg("Unbound recargado exitosamente.")
     else:
         log_msg(f"ADVERTENCIA: Recarga de Unbound retornó código {res}")
+
 
 
 if __name__ == '__main__':
