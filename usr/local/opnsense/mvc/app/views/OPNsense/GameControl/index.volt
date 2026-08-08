@@ -146,10 +146,10 @@
                         </div>
                         <div class="panel-body">
                             <ul>
-                                <li>Ir a <strong>Servicios -> Unbound DNS -> General</strong> y asegurar que Unbound esté <code>Habilitado</code>.</li>
+                                <li>Ir a <strong>Servicios -> Unbound DNS -> General</strong> y asegurar que Unbound esté <span style="color:#ffd54f; font-weight:bold;">Habilitado</span>.</li>
                                 <li>Ir a <strong>Servicios -> Unbound DNS -> Blocklists</strong>.</li>
-                                <li>Crear o verificar una entrada con Descripción <code>Games</code> y agregar la URL:
-                                    <br><code style="font-size:11px; color:#ffd54f;">https://raw.githubusercontent.com/JosuhaSanhueza/BlockList/refs/heads/main/GamesBlockList.txt</code>
+                                <li>Crear o verificar una entrada con Descripción <span style="color:#ffd54f; font-weight:bold;">Games</span> y agregar la URL:
+                                    <br><span style="font-size:12px; color:#ffd54f; font-family:monospace; word-break: break-all;">https://raw.githubusercontent.com/JosuhaSanhueza/BlockList/refs/heads/main/GamesBlockList.txt</span>
                                 </li>
                             </ul>
                         </div>
@@ -164,14 +164,16 @@
                         <div class="panel-body">
                             <ul>
                                 <li>Ir a <strong>Cortafuegos -> NAT -> Redirección de Puertos</strong>.</li>
-                                <li>Crear regla: Interfaz <code>LAN</code>, Protocolo <code>TCP/UDP</code>, Puerto Destino <code>53 (DNS)</code>.</li>
-                                <li>Redirigir a IP Destino <code>127.0.0.1</code> (IP local del Firewall) Puerto <code>53</code>.</li>
+                                <li>Crear regla: Interfaz <span style="color:#ffd54f; font-weight:bold;">LAN</span>, Protocolo <span style="color:#ffd54f; font-weight:bold;">TCP/UDP</span>, Puerto Destino <span style="color:#ffd54f; font-weight:bold;">53 (DNS)</span>.</li>
+                                <li>Redirigir a IP Destino <span style="color:#ffd54f; font-weight:bold;">127.0.0.1</span> (IP local del Firewall) Puerto <span style="color:#ffd54f; font-weight:bold;">53</span>.</li>
                                 <li><em>Esto evita que cualquier estudiante cambie sus DNS a 8.8.8.8 o 1.1.1.1 para evadir la regla.</em></li>
+                                <li style="margin-top:10px;">📖 <a href="https://docs.opnsense.org/manual/how-tos/dns_redirect.html" target="_blank" style="color:#5bc0de; text-decoration:underline; font-weight:bold;"><i class="fa fa-external-link"></i> Ver Tutorial Oficial: OPNsense DNS Redirect / Port 53 NAT Forwarding</a></li>
                             </ul>
                         </div>
                     </div>
                 </div>
             </div>
+
 
             <div class="row" style="margin-top: 15px;">
                 <div class="col-md-12">
