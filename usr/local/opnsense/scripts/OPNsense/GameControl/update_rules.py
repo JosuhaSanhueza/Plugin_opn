@@ -219,13 +219,16 @@ def generate_unbound_rules():
         if config_changed:
             tree.write(CONFIG_PATH)
             os.system('/usr/local/sbin/configctl template reload OPNsense/Unbound >/dev/null 2>&1')
-            log_msg("Se sincronizó el estado del nodo DNSBL 'Games' en config.xml")
+            os.system('/usr/local/sbin/configctl unbound dnsbl >/dev/null 2>&1')
+            log_msg("Se sincronizó el estado del nodo DNSBL 'Games' en config.xml y se ejecutó configctl unbound dnsbl")
     except Exception as e:
         log_msg(f"Error sincronizando config.xml: {e}")
 
     # 6. Reiniciar/Recargar Unbound de forma silenciosa
+    os.system('/usr/local/sbin/configctl unbound dnsbl >/dev/null 2>&1')
     res = os.system('/usr/local/sbin/unbound-control reload >/dev/null 2>&1 || /usr/local/sbin/pluginctl -s unbound restart')
     log_msg("Sincronización nativa de Unbound ejecutada exitosamente.")
+
 
 
 
