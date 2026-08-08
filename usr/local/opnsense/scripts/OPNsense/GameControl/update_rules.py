@@ -151,12 +151,14 @@ def generate_unbound_rules():
         lines.append(f'    access-control-tag: {ip_addr}/32 "gaming_blocked"')
 
     for domain in blocked_domains:
-        lines.append(f'    local-zone: "{domain}" refuse')
-        lines.append(f'    access-control-tag-data: {domain} "gaming_blocked" always_refuse')
+        lines.append(f'    local-zone: "{domain}" static')
+        lines.append(f'    local-data: "{domain}. A 0.0.0.0"')
+        lines.append(f'    access-control-tag-data: {domain} "gaming_blocked" always_null')
 
     os.makedirs(os.path.dirname(UNBOUND_RULES_PATH), exist_ok=True)
     with open(UNBOUND_RULES_PATH, 'w') as f:
         f.write("\n".join(lines))
+
 
 
     # 3. Escribir en runtime e integrar la directiva de inclusión en unbound.conf
