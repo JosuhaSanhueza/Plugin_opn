@@ -161,14 +161,22 @@ def generate_unbound_rules():
 
 
 
-    # Escribir en runtime de Unbound
-    for rpath in ['/var/unbound/etc/gamecontrol.conf', '/usr/local/etc/unbound/unbound.conf.d/gamecontrol.conf']:
+    # Escribir en runtime y plantilla oficial de OPNsense
+    for rpath in [
+        '/var/unbound/etc/gamecontrol.conf',
+        '/usr/local/etc/unbound/unbound.conf.d/gamecontrol.conf',
+        '/usr/local/opnsense/service/templates/OPNsense/Unbound/gamecontrol.conf'
+    ]:
         try:
             os.makedirs(os.path.dirname(rpath), exist_ok=True)
             with open(rpath, 'w') as f:
                 f.write("\n".join(lines))
         except Exception as e:
             pass
+
+    # Forzar recarga de plantilla en OPNsense
+    os.system('/usr/local/sbin/configctl template reload OPNsense/Unbound >/dev/null 2>&1')
+
 
     # 3. Vaciar la caché DNS en memoria de Unbound para las IPs habilitadas
     if unblocked_ips:
