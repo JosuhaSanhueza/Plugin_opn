@@ -203,16 +203,30 @@ def generate_unbound_rules():
         for domain in list(blocked_domains)[:100]:
             os.system(f'/usr/local/sbin/unbound-control flush {domain} >/dev/null 2>&1')
 
-    # 5. Actualizar tabla dinámica del Cortafuegos (PF Table)
-    pf_table_file = '/var/etc/gamecontrol_pf_blocked.txt'
-    with open(pf_table_file, 'w') as f:
-        f.write("\n".join(blocked_ips_list))
+    # 5. Sincronizar dinámicamente el nodo DNSBL 'Games' en /conf/config.xml si es necesario
+    try:
+        config_changed = False
+        for elem in root.findall('.//OPNsense/Unbound//'):
+            descr = elem.find('description')
+            if descr is not None and descr.text and 'game' in descr.text.lower():
+                enabled_elem = elem.find('enabled')
+                # Si hay al menos 1 IP permitida, deshabilitar la lista global DNSBL para manejar el bloqueo vía plugin
+                target_state = "0" if len(unblocked_ips) > 0 else "1"
+                if enabled_elem is not None and enabled_elem.text != target_state:
+                    enabled_elem.text = target_state
+                    config_changed = True
+        
+        if config_changed:
+            tree.write(CONFIG_PATH)
+            os.system('/usr/local/sbin/configctl template reload OPNsense/Unbound >/dev/null 2>&1')
+            log_msg("Se sincronizó el estado del nodo DNSBL 'Games' en config.xml")
+    except Exception as e:
+        log_msg(f"Error sincronizando config.xml: {e}")
 
-    os.system(f'/sbin/pfctl -t game_blocked_ips -T replace -f {pf_table_file} >/dev/null 2>&1')
-
-    # 6. Reiniciar/Recargar Unbound de forma silenciosa para procesar el include
+    # 6. Reiniciar/Recargar Unbound de forma silenciosa
     res = os.system('/usr/local/sbin/unbound-control reload >/dev/null 2>&1 || /usr/local/sbin/pluginctl -s unbound restart')
-    log_msg("Sincronización nativa de Unbound e inclusión en unbound.conf ejecutada exitosamente.")
+    log_msg("Sincronización nativa de Unbound ejecutada exitosamente.")
+
 
 
 
