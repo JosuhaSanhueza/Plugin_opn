@@ -97,11 +97,36 @@ class ServiceController extends ApiControllerBase
 
             $backend = new Backend();
             $response = $backend->configdRun("gamecontrol reload");
-            return array("status" => "ok", "ip" => $ip, "blocked" => (int)$status, "backend" => $response);
-        }
-
-        return array("status" => "error", "message" => "Faltan parámetros");
+    public function restartServiceAction()
+    {
+        $backend = new Backend();
+        $responseRules = $backend->configdRun("gamecontrol reload");
+        $responseUnbound = $backend->configdRun("unbound restart");
+        return array(
+            "status" => "ok",
+            "message" => "Servicio de control de juegos reseteado y Unbound re-sincronizado exitosamente.",
+            "response_rules" => $responseRules,
+            "response_unbound" => $responseUnbound
+        );
     }
 
+    public function getLogsAction()
+    {
+        $logFile = '/var/log/gamecontrol.log';
+        $logContent = file_exists($logFile) ? file_get_contents($logFile) : "No hay registros disponibles.";
+
+        $lines = explode("\n", trim($logContent));
+        $recentLines = array_slice($lines, -40);
+
+        $unblockedFile = '/var/etc/gamecontrol_unblocked.json';
+        $unblockedContent = file_exists($unblockedFile) ? file_get_contents($unblockedFile) : "{}";
+
+        return array(
+            "status" => "ok",
+            "logs" => implode("\n", $recentLines),
+            "unblocked_ips" => json_decode($unblockedContent, true) ?: array()
+        );
+    }
 }
+
 

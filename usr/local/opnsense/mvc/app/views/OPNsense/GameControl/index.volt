@@ -81,7 +81,9 @@
 <ul class="nav nav-tabs" id="gamecontrol-tabs" role="tablist" style="margin-bottom: 20px;">
     <li class="active"><a href="#tab-main" role="tab" data-toggle="tab"><i class="fa fa-gamepad"></i> Control Modular</a></li>
     <li><a href="#tab-guide" role="tab" data-toggle="tab"><i class="fa fa-book"></i> Guía de Configuración</a></li>
+    <li><a href="#tab-debug" role="tab" data-toggle="tab" onclick="loadDebugLogs()"><i class="fa fa-bug"></i> Depurador & Logs</a></li>
 </ul>
+
 
 <div class="tab-content">
     <!-- PESTAÑA PRINCIPAL -->
@@ -203,7 +205,52 @@
 
         </div>
     </div>
+
+    <!-- PESTAÑA DEPURADOR Y LOGS -->
+    <div class="tab-pane" id="tab-debug">
+        <div class="content-box" style="border-radius: 6px; padding: 25px; margin-bottom: 30px;">
+            <div class="row">
+                <div class="col-md-9">
+                    <h2><i class="fa fa-bug" style="color:#f0ad4e;"></i> Depurador del Sistema & Historial de Sincronización</h2>
+                    <p class="text-muted">Registro en tiempo real de reglas DNS, estado de IPs habilitadas y respuestas de Unbound.</p>
+                </div>
+                <div class="col-md-3 text-right">
+                    <button class="btn btn-default" onclick="loadDebugLogs()"><i class="fa fa-refresh"></i> Actualizar Logs</button>
+                </div>
+            </div>
+
+            <div class="row" style="margin-top: 15px;">
+                <div class="col-md-12">
+                    <label>IPs Actualmente Habilitadas / Excluidas del Bloqueo:</label>
+                    <pre id="unblocked-ips-view" style="background-color: #111; color: #5bc0de; font-size: 13px; font-family: monospace; border: 1px solid #333; height: 70px; padding: 10px;">Cargando...</pre>
+                </div>
+            </div>
+
+            <div class="row" style="margin-top: 10px;">
+                <div class="col-md-12">
+                    <label>Últimas 40 Líneas de Registro (/var/log/gamecontrol.log):</label>
+                    <pre id="log-output" style="background-color: #111; color: #8bc34a; font-size: 12px; font-family: monospace; border: 1px solid #333; height: 320px; overflow-y: scroll; padding: 10px;">Cargando registros...</pre>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+    function loadDebugLogs() {
+        $.getJSON('/api/gamecontrol/service/getLogs', function(data) {
+            if (data && data.logs) {
+                $('#log-output').text(data.logs);
+                var logsElement = document.getElementById("log-output");
+                logsElement.scrollTop = logsElement.scrollHeight;
+            }
+            if (data && data.unblocked_ips) {
+                $('#unblocked-ips-view').text(JSON.stringify(data.unblocked_ips, null, 2));
+            }
+        });
+    }
+</script>
+
 
 
 
