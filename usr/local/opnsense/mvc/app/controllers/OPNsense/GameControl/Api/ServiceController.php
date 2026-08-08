@@ -78,11 +78,28 @@ class ServiceController extends ApiControllerBase
 
     public function toggleHostAction($ip = null, $status = null)
     {
-        if ($ip !== null && $status !== null) {
+        if ($ip === null) {
+            $ip = $this->request->getPost('ip', null, $this->request->get('ip'));
+        }
+        if ($status === null) {
+            $status = $this->request->getPost('status', null, $this->request->get('status'));
+        }
+
+        if (!empty($ip) && $status !== null) {
             $unblockedFile = '/var/etc/gamecontrol_unblocked.json';
             $unblockedIps = array();
             if (file_exists($unblockedFile)) {
-                $unblockedIps = json_decode(file_get_contents($unblockedFile), true) ?: array();
+                $raw = file_get_contents($unblockedFile);
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded)) {
+                    foreach ($decoded as $k => $v) {
+                        if (is_numeric($k)) {
+                            $unblockedIps[$v] = 0;
+                        } else {
+                            $unblockedIps[$k] = $v;
+                        }
+                    }
+                }
             }
 
             if ((int)$status == 0) {
@@ -93,6 +110,8 @@ class ServiceController extends ApiControllerBase
                 unset($unblockedIps[$ip]);
             }
 
+            file_put_contents($unblockedFile, json_encode($unblockedIps));
+
             $backend = new Backend();
             $response = $backend->configdRun("gamecontrol reload");
             return array("status" => "ok", "ip" => $ip, "blocked" => (int)$status, "backend" => $response);
@@ -100,6 +119,7 @@ class ServiceController extends ApiControllerBase
 
         return array("status" => "error", "message" => "Faltan parámetros");
     }
+
 
     public function restartServiceAction()
 
