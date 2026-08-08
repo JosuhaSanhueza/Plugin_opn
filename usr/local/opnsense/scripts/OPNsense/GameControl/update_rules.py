@@ -184,6 +184,8 @@ def generate_unbound_rules():
 
 
     # Asegurar que /var/unbound/unbound.conf contenga la instrucción include
+    unbound_conf = '/var/unbound/unbound.conf'
+    include_line = 'include: /var/unbound/etc/gamecontrol.conf'
     if os.path.exists(unbound_conf):
         try:
             with open(unbound_conf, 'r') as f:
@@ -194,6 +196,7 @@ def generate_unbound_rules():
                 log_msg(f"Se insertó '{include_line}' en {unbound_conf}")
         except Exception as e:
             log_msg(f"Error actualizando {unbound_conf}: {e}")
+
 
     # 4. Vaciar la caché DNS en memoria de Unbound para las IPs habilitadas
     if unblocked_ips:
