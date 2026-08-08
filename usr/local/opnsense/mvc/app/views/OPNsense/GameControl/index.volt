@@ -57,7 +57,15 @@
         });
     }
 
+    function restartEmergencyService() {
+        $('#student-list').html('<tr><td colspan="4" class="text-center text-warning"><i class="fa fa-refresh fa-spin"></i> Reiniciando Servicio DNS de Emergencia y Re-sincronizando reglas...</td></tr>');
+        $.post('/api/gamecontrol/service/restartService', function(data) {
+            loadStudentHosts();
+        });
+    }
+
     function toggleStudentGame(ip, blockState) {
+
         $.post('/api/gamecontrol/service/toggleHost/' + ip + '/' + blockState, function(data) {
             loadStudentHosts();
         });
@@ -86,14 +94,18 @@
                     <p style="font-size:12px;"><i class="fa fa-github"></i> Lista activa de GitHub: <a href="https://raw.githubusercontent.com/JosuhaSanhueza/BlockList/refs/heads/main/GamesBlockList.txt" target="_blank" style="color:#5bc0de; text-decoration:underline;">JosuhaSanhueza/BlockList (GamesBlockList.txt)</a></p>
                 </div>
                 <div class="col-md-5 text-right">
-                    <button class="btn btn-danger" style="font-weight: bold; padding: 8px 16px; margin-right: 8px;" onclick="toggleAll(1)">
+                    <button class="btn btn-warning" style="font-weight: bold; padding: 8px 14px; margin-right: 6px; background-color: #f0ad4e; border:none;" onclick="restartEmergencyService()" title="Reiniciar Servicio y Re-sincronizar DNS en caso de atasco">
+                        <i class="fa fa-refresh"></i> Reiniciar Servicio
+                    </button>
+                    <button class="btn btn-danger" style="font-weight: bold; padding: 8px 14px; margin-right: 6px;" onclick="toggleAll(1)">
                         <i class="fa fa-lock"></i> Bloquear Todos
                     </button>
-                    <button class="btn btn-info" style="font-weight: bold; padding: 8px 16px; background-color: #0288d1; border:none;" onclick="toggleAll(0)">
+                    <button class="btn btn-info" style="font-weight: bold; padding: 8px 14px; background-color: #0288d1; border:none;" onclick="toggleAll(0)">
                         <i class="fa fa-gamepad"></i> Habilitar Juegos a Todos
                     </button>
                 </div>
             </div>
+
 
             <hr style="border-color: #333; margin: 15px 0 20px 0;">
 

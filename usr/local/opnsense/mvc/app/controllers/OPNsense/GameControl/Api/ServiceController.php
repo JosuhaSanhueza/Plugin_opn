@@ -68,12 +68,26 @@ class ServiceController extends ApiControllerBase
     }
 
 
+    public function restartServiceAction()
+    {
+        $backend = new Backend();
+        $responseRules = $backend->configdRun("gamecontrol reload");
+        $responseUnbound = $backend->configdRun("unbound restart");
+        return array(
+            "status" => "ok",
+            "message" => "Servicio de control de juegos reseteado y Unbound re-sincronizado exitosamente.",
+            "response_rules" => $responseRules,
+            "response_unbound" => $responseUnbound
+        );
+    }
+
     public function reloadAction()
     {
         $backend = new Backend();
         $response = $backend->configdRun("gamecontrol reload");
         return array("status" => "ok", "response" => $response);
     }
+
 
     public function toggleHostAction($ip, $status)
     {
