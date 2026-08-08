@@ -16,6 +16,13 @@ class ServiceController extends ApiControllerBase
         $ipStartLong = ip2long($ipStart);
         $ipEndLong = ip2long($ipEnd);
 
+        // Cargar estado de IPs desbloqueadas desde el archivo de persistencia
+        $unblockedIps = array();
+        $unblockedFile = '/var/etc/gamecontrol_unblocked.json';
+        if (file_exists($unblockedFile)) {
+            $unblockedIps = json_decode(file_get_contents($unblockedFile), true) ?: array();
+        }
+
         $hosts = array();
         $config = Config::getInstance()->object();
 
@@ -26,12 +33,13 @@ class ServiceController extends ApiControllerBase
                     $ip = (string)$host->ip;
                     $ipLong = ip2long($ip);
                     if ($ipLong !== false && $ipLong >= $ipStartLong && $ipLong <= $ipEndLong) {
+                        $isBlocked = isset($unblockedIps[$ip]) && $unblockedIps[$ip] == 0 ? 0 : 1;
                         $hosts[$ip] = array(
                             "hostname" => !empty($host->host) ? (string)$host->host : "Sin Nombre",
                             "ip" => $ip,
                             "ip_long" => $ipLong,
                             "mac" => !empty($host->mac) ? (string)$host->mac : "-",
-                            "blocked" => 1
+                            "blocked" => $isBlocked
                         );
                     }
                 }
@@ -47,12 +55,13 @@ class ServiceController extends ApiControllerBase
                 $ip = $m[1];
                 $ipLong = ip2long($ip);
                 if ($ipLong !== false && $ipLong >= $ipStartLong && $ipLong <= $ipEndLong && !isset($hosts[$ip])) {
+                    $isBlocked = isset($unblockedIps[$ip]) && $unblockedIps[$ip] == 0 ? 0 : 1;
                     $hosts[$ip] = array(
                         "hostname" => !empty($m[3]) ? $m[3] : "Host-" . str_replace('.', '-', $ip),
                         "ip" => $ip,
                         "ip_long" => $ipLong,
                         "mac" => $m[2],
-                        "blocked" => 1
+                        "blocked" => $isBlocked
                     );
                 }
             }
@@ -67,33 +76,32 @@ class ServiceController extends ApiControllerBase
         return array("status" => "ok", "hosts" => $hostList, "ip_start" => $ipStart, "ip_end" => $ipEnd);
     }
 
-
-    public function restartServiceAction()
+    public function toggleHostAction($ip = null, $status = null)
     {
-        $backend = new Backend();
-        $responseRules = $backend->configdRun("gamecontrol reload");
-        $responseUnbound = $backend->configdRun("unbound restart");
-        return array(
-            "status" => "ok",
-            "message" => "Servicio de control de juegos reseteado y Unbound re-sincronizado exitosamente.",
-            "response_rules" => $responseRules,
-            "response_unbound" => $responseUnbound
-        );
+        if ($ip !== null && $status !== null) {
+            $unblockedFile = '/var/etc/gamecontrol_unblocked.json';
+            $unblockedIps = array();
+            if (file_exists($unblockedFile)) {
+                $unblockedIps = json_decode(file_get_contents($unblockedFile), true) ?: array();
+            }
+
+            if ((int)$status == 0) {
+                // Desbloquear (Juegos Permitidos)
+                $unblockedIps[$ip] = 0;
+            } else {
+                // Bloquear (Juegos Bloqueados)
+                unset($unblockedIps[$ip]);
+            }
+
+            @file_put_contents($unblockedFile, json_encode($unblockedIps));
+
+            $backend = new Backend();
+            $response = $backend->configdRun("gamecontrol reload");
+            return array("status" => "ok", "ip" => $ip, "blocked" => (int)$status, "backend" => $response);
+        }
+
+        return array("status" => "error", "message" => "Faltan parámetros");
     }
 
-    public function reloadAction()
-    {
-        $backend = new Backend();
-        $response = $backend->configdRun("gamecontrol reload");
-        return array("status" => "ok", "response" => $response);
-    }
-
-
-    public function toggleHostAction($ip, $status)
-    {
-        $backend = new Backend();
-        $response = $backend->configdRun("gamecontrol reload");
-        return array("status" => "ok", "ip" => $ip, "blocked" => $status);
-    }
 }
 
