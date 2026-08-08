@@ -93,11 +93,16 @@ class ServiceController extends ApiControllerBase
                 unset($unblockedIps[$ip]);
             }
 
-            @file_put_contents($unblockedFile, json_encode($unblockedIps));
-
             $backend = new Backend();
             $response = $backend->configdRun("gamecontrol reload");
+            return array("status" => "ok", "ip" => $ip, "blocked" => (int)$status, "backend" => $response);
+        }
+
+        return array("status" => "error", "message" => "Faltan parámetros");
+    }
+
     public function restartServiceAction()
+
     {
         $backend = new Backend();
         $responseRules = $backend->configdRun("gamecontrol reload");
