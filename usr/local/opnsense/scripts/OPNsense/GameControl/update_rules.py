@@ -113,11 +113,16 @@ def generate_unbound_rules():
         try:
             with open(unblocked_file, 'r') as f:
                 data = json.load(f)
-                for ip, st in data.items():
-                    if st == 0:
-                        unblocked_ips.add(ip)
+                if isinstance(data, dict):
+                    for ip, st in data.items():
+                        if st == 0:
+                            unblocked_ips.add(ip)
+                elif isinstance(data, list):
+                    for ip in data:
+                        unblocked_ips.add(str(ip))
         except Exception as e:
             log_msg(f"Error leyendo {unblocked_file}: {e}")
+
 
     # Extraer IPs objetivo (por defecto todas las detectadas en el rango)
     # y filtrar las que hayan sido desbloqueadas desde la interfaz
