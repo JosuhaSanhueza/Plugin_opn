@@ -2,11 +2,12 @@
 
 echo "=== Desinstalando completamente GameControl y restaurando conectividad ==="
 
-# 1. Eliminar archivos del plugin
+# 1. Eliminar todos los archivos y plantillas del plugin
 rm -rf /usr/local/opnsense/mvc/app/models/OPNsense/GameControl
 rm -rf /usr/local/opnsense/mvc/app/views/OPNsense/GameControl
 rm -rf /usr/local/opnsense/mvc/app/controllers/OPNsense/GameControl
 rm -rf /usr/local/opnsense/scripts/OPNsense/GameControl
+rm -rf /usr/local/opnsense/service/templates/OPNsense/GameControl
 rm -f /usr/local/opnsense/service/conf/actions.d/actions_gamecontrol.conf
 rm -f /usr/local/etc/unbound/gamecontrol.conf
 rm -f /var/unbound/etc/gamecontrol.conf
@@ -15,6 +16,8 @@ rm -f /usr/local/etc/unbound/unbound.conf.d/gamecontrol.conf
 rm -f /var/etc/gamecontrol_unblocked.json
 rm -f /var/etc/gamecontrol_pf_blocked.txt
 rm -f /tmp/opnsense_menu_cache.json
+rm -f /tmp/opnsense_acl_cache.json
+rm -rf /tmp/phalcon*
 rm -f /tmp/os-gamecontrol*
 
 # 2. Limpiar inclusión en /var/unbound/unbound.conf
@@ -30,9 +33,11 @@ fi
 /usr/local/sbin/configctl unbound dnsbl >/dev/null 2>&1
 /usr/local/sbin/unbound-control reload >/dev/null 2>&1 || /usr/local/sbin/pluginctl -s unbound restart
 
-# 5. Reiniciar configd y WebGUI
+# 5. Forzar reconstrucción de caché de menú y ACL de OPNsense
+/usr/local/sbin/configctl service reload all >/dev/null 2>&1
 /usr/local/sbin/pluginctl -s configd restart
 /usr/local/sbin/pluginctl -c webgui restart
 
-echo "=== Desinstalación completada exitosamente. Conexión a internet restaurada. ==="
+echo "=== Desinstalación completada exitosamente. Conexión a internet y menú de OPNsense restaurados. ==="
+
 
