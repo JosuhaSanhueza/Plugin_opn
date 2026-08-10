@@ -123,38 +123,34 @@ def update_game_control():
         for yaml_path in [
             '/usr/local/bin/AdGuardHome.yaml',
             '/var/db/adguardhome/AdGuardHome.yaml',
-            '/usr/local/etc/adguardhome/AdGuardHome.yaml'
+            '/usr/local/etc/adguardhome/AdGuardHome.yaml',
+            '/var/adguardhome/AdGuardHome.yaml'
         ]:
             if os.path.exists(yaml_path):
                 try:
                     with open(yaml_path, 'r') as f:
-                        lines = f.readlines()
+                        content = f.read()
                     
-                    new_lines = []
-                    in_user_rules = False
-                    for line in lines:
-                        if line.strip().startswith('user_rules:'):
-                            in_user_rules = True
-                            new_lines.append('user_rules:\n')
-                            for r in user_rules:
-                                new_lines.append(f'  - "{r}"\n')
-                            continue
-                        if in_user_rules:
-                            if line.startswith('  - ') or line.startswith('    '):
-                                continue
-                            else:
-                                in_user_rules = False
-                        new_lines.append(line)
+                    # Formatear las reglas en la estructura YAML requerida por AdGuard Home
+                    formatted_rules = "user_rules:\n" + "\n".join([f'  - "{r}"' for r in user_rules]) + "\n"
+                    
+                    if 'user_rules:' in content:
+                        import re
+                        # Reemplazar la sección user_rules completa hasta la siguiente clave principal
+                        new_content = re.sub(r'user_rules:.*?(?=\n\w|\Z)', formatted_rules.strip(), content, flags=re.DOTALL)
+                    else:
+                        new_content = content + "\n" + formatted_rules
 
                     with open(yaml_path, 'w') as f:
-                        f.writelines(new_lines)
+                        f.write(new_content)
                     
                     log_msg(f"Reglas actualizadas directamente en {yaml_path}. Recargando AdGuard Home...")
-                    os.system('/usr/local/bin/AdGuardHome -s reload >/dev/null 2>&1 || service adguardhome reload >/dev/null 2>&1')
+                    os.system('/usr/local/bin/AdGuardHome -s restart >/dev/null 2>&1 || service adguardhome restart >/dev/null 2>&1')
                     rules_written = True
                     break
                 except Exception as ex:
                     log_msg(f"Error escribiendo en {yaml_path}: {ex}")
+
 
 
 if __name__ == '__main__':
