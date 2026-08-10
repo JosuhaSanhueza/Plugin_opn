@@ -2,7 +2,7 @@
 
 echo "=== Desinstalando completamente GameControl y restaurando conectividad ==="
 
-# 1. Eliminar todos los archivos, XML de menú, ACL y plantillas del plugin
+# 1. Eliminar todos los archivos, XML de menú, ACL y plantillas del plugin en todas las rutas del sistema
 rm -rf /usr/local/opnsense/mvc/app/models/OPNsense/GameControl
 rm -rf /usr/local/opnsense/mvc/app/views/OPNsense/GameControl
 rm -rf /usr/local/opnsense/mvc/app/controllers/OPNsense/GameControl
@@ -15,11 +15,13 @@ rm -f /var/unbound/etc/gamecontrol.rpz
 rm -f /usr/local/etc/unbound/unbound.conf.d/gamecontrol.conf
 rm -f /var/etc/gamecontrol_unblocked.json
 rm -f /var/etc/gamecontrol_pf_blocked.txt
-find /usr/local/opnsense/mvc/app/models/ -iname "*GameControl*" -exec rm -rf {} +
-find /tmp -name "*opnsense*" -exec rm -rf {} +
-find /tmp -name "*phalcon*" -exec rm -rf {} +
+find /usr/local/opnsense/ -iname "*GameControl*" -exec rm -rf {} +
+find /tmp/ -name "*menu*" -exec rm -rf {} +
+find /tmp/ -name "*acl*" -exec rm -rf {} +
+find /tmp/ -name "*phalcon*" -exec rm -rf {} +
 rm -f /var/etc/opnsense_menu_cache*
 rm -f /var/run/opnsense_menu_cache*
+
 
 # Limpiar entrada en /conf/config.xml si quedó alguna configuración guardada
 if [ -f /conf/config.xml ]; then
