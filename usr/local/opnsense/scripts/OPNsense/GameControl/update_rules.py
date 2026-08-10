@@ -86,7 +86,8 @@ def update_game_control():
 
     for domain in domains:
         lines.append(f'    local-zone: "{domain}" refuse')
-        lines.append(f'    access-control-tag-data: "{domain}" "gaming_blocked" always_refuse')
+        lines.append(f'    access-control-tag-data: {domain} "gaming_blocked" always_refuse')
+
 
     os.makedirs(os.path.dirname(GAMECONTROL_CONF), exist_ok=True)
     with open(GAMECONTROL_CONF, 'w') as f:
