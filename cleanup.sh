@@ -18,8 +18,17 @@ rm -f /var/etc/gamecontrol_pf_blocked.txt
 find /usr/local/opnsense/mvc/app/models/ -iname "*GameControl*" -exec rm -rf {} +
 find /tmp -name "*opnsense*" -exec rm -rf {} +
 find /tmp -name "*phalcon*" -exec rm -rf {} +
-rm -f /var/etc/opnsense_menu_cache.xml
+rm -f /var/etc/opnsense_menu_cache*
 rm -f /var/run/opnsense_menu_cache*
+
+# Limpiar entrada en /conf/config.xml si quedó alguna configuración guardada
+if [ -f /conf/config.xml ]; then
+    sed -i '' '/<GameControl>/,/<\/GameControl>/d' /conf/config.xml
+fi
+
+# Desregistrar paquete pkg de OPNsense si fue instalado como paquete
+pkg delete -y os-gamecontrol >/dev/null 2>&1 || true
+
 
 
 # 2. Limpiar inclusión en /var/unbound/unbound.conf
