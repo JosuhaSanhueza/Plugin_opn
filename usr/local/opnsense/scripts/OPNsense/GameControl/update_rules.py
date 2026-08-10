@@ -79,6 +79,7 @@ def update_game_control():
     for ip_addr in unblocked_ips:
         for domain in domains:
             user_rules.append("@@||" + domain + "^$client=" + ip_addr)
+            user_rules.append("@@||*." + domain + "^$client=" + ip_addr)
 
     rules_written = False
     try:
