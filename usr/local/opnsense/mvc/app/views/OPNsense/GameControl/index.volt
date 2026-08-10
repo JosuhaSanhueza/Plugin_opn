@@ -150,23 +150,20 @@
     <!-- PESTAÑA GUÍA DE CONFIGURACIÓN -->
     <div class="tab-pane" id="tab-guide">
         <div class="content-box" style="border-radius: 6px; padding: 25px; margin-bottom: 30px;">
-            <h2><i class="fa fa-cogs" style="color:#0288d1;"></i> Guía de Configuración Paso a Paso (OPNsense)</h2>
-            <p class="text-muted">Para asegurar que el plugin funcione en tiempo real (0 ms de respuesta) sin perder la seguridad de Unbound, complete los 3 sencillos pasos a continuación:</p>
+            <h2><i class="fa fa-cogs" style="color:#0288d1;"></i> Arquitectura AdGuard Home + Unbound (0 ms)</h2>
+            <p class="text-muted">Filtrado granular por alumno vía API REST de AdGuard Home con resolución segura y cifrada en Unbound DoT (Puerto 5353).</p>
 
             <div class="row" style="margin-top: 25px;">
                 <!-- PASO 1 -->
                 <div class="col-md-4">
                     <div class="panel panel-default" style="background-color: rgba(255,255,255,0.03); border-color: #444;">
                         <div class="panel-heading" style="background-color: rgba(2,136,209,0.2); color:#fff; font-weight:bold;">
-                            1. Crear Alias del Cortafuegos
+                            1. Unbound DNS (Puerto 5353)
                         </div>
                         <div class="panel-body">
                             <ul>
-                                <li>Ir a <strong>Cortafuegos -> Aliases</strong> y hacer clic en <strong>+ Añadir</strong>.</li>
-                                <li><strong>Nombre</strong>: <span style="color:#ffd54f; font-weight:bold;">game_allowed_ips</span> *(Exacto)*.</li>
-                                <li><strong>Tipo</strong>: Seleccionar <span style="color:#ffd54f; font-weight:bold;">Externa (avanzado)</span>.</li>
-                                <li><strong>Descripción</strong>: <span style="color:#aaa;">IPs de Alumnos Habilitados</span>.</li>
-                                <li>Guardar y Aplicar Cambios.</li>
+                                <li>En <strong>Servicios -> Unbound DNS -> General</strong>, cambie el puerto de escucha a <span style="color:#ffd54f; font-weight:bold;">5353</span>.</li>
+                                <li>Mantiene intactas todas sus listas de seguridad (*Porno, Proxies, Updates, SpeedTest*) y su cifrado **DoT hacia Cloudflare (Puerto 853)**.</li>
                             </ul>
                         </div>
                     </div>
@@ -176,19 +173,15 @@
                 <div class="col-md-4">
                     <div class="panel panel-default" style="background-color: rgba(255,255,255,0.03); border-color: #444;">
                         <div class="panel-heading" style="background-color: rgba(40,167,69,0.2); color:#fff; font-weight:bold;">
-                            2. Reglas NAT (Destination NAT)
+                            2. AdGuard Home (Puerto 53)
                         </div>
                         <div class="panel-body">
                             <ul>
-                                <li>Ir a <strong>Cortafuegos -> NAT -> Destination NAT</strong>.</li>
-                                <li><strong>Regla 1 (Exención Alumnos Habilitados)</strong>:
-                                    <br>- Interfaz: <span style="color:#ffd54f;">LAN</span>, Protocolo: <span style="color:#ffd54f;">TCP/UDP</span>.
-                                    <br>- Dirección Origen: <span style="color:#ffd54f;">game_allowed_ips</span>.
-                                    <br>- Puerto Destino: <span style="color:#ffd54f;">53 (DNS)</span>.
-                                    <br>- Redirect Target IP: <span style="color:#ffd54f;">127.0.0.1</span>.
-                                    <br>- Redirect Target Port: <span style="color:#ffd54f;">5353</span> (Dnsmasq).
+                                <li>Abrir la interfaz de AdGuard Home en <span style="color:#ffd54f; font-weight:bold;">http://192.168.12.1:3000</span>.</li>
+                                <li>En <strong>Configuración -> Configuración DNS</strong>, coloque en Servidores Upstream:
+                                    <br><span style="font-size:12px; color:#ffd54f; font-family:monospace;">127.0.0.1:5353</span>
                                 </li>
-                                <li style="margin-top:8px;">⚠️ <strong>Posición</strong>: Colocar esta regla <strong>ARRIBA</strong> de su regla general de "Forzar Dns".</li>
+                                <li>Desactive las listas de bloqueo globales en AdGuard para garantizar **0 latencia**.</li>
                             </ul>
                         </div>
                     </div>
@@ -198,16 +191,12 @@
                 <div class="col-md-4">
                     <div class="panel panel-default" style="background-color: rgba(255,255,255,0.03); border-color: #444;">
                         <div class="panel-heading" style="background-color: rgba(240,173,78,0.2); color:#fff; font-weight:bold;">
-                            3. Ajuste de Dnsmasq (Puerto 5353)
+                            3. Plugin Escolarapp
                         </div>
                         <div class="panel-body">
                             <ul>
-                                <li>Ir a <strong>Servicios -> Dnsmasq DNS & DHCP -> General</strong>.</li>
-                                <li>Cambiar el <strong>Puerto de Escucha</strong> a <span style="color:#ffd54f; font-weight:bold;">5353</span>.</li>
-                                <li>En las opciones de reenvío, agregar:
-                                    <br><span style="font-size:12px; color:#ffd54f; font-family:monospace;">server=127.0.0.1#53</span>
-                                </li>
-                                <li>Guardar y Aplicar Cambios.</li>
+                                <li>Al presionar **"Habilitar Juegos"** en el panel web, el plugin envía una orden a la API REST de AdGuard en **0 milisegundos**.</li>
+                                <li>El alumno habilitado juega al instante mientras Unbound mantiene la seguridad escolar activa para todos.</li>
                             </ul>
                         </div>
                     </div>
@@ -217,13 +206,14 @@
             <div class="row" style="margin-top: 10px;">
                 <div class="col-md-12">
                     <div class="alert alert-info" style="background-color: rgba(2,136,209,0.1); border-color: #0288d1; color:#fff;">
-                        <i class="fa fa-info-circle"></i> <strong>Respuesta Instantánea (0 ms)</strong>: Con esta estructura, al hacer clic en el botón verde desde el panel de control, la IP se añade a la tabla del cortafuegos de inmediato. El alumno navegará a los juegos al instante y continuará protegido por todas las reglas escolares de Unbound.
+                        <i class="fa fa-info-circle"></i> <strong>Integración 100% Nativa</strong>: Cero certificados instalados en PCs, cero interrupción de bancos o Zoom y logs detallados por cada equipo del laboratorio.
                     </div>
                 </div>
             </div>
 
         </div>
     </div>
+
 
 
 
