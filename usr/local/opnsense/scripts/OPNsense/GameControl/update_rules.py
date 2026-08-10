@@ -9,6 +9,12 @@ UNBLOCKED_FILE = '/var/etc/gamecontrol_unblocked.json'
 LOG_FILE = '/var/log/gamecontrol.log'
 ADGUARD_API_URL = 'http://127.0.0.1:3000/control'
 GITHUB_GAMES_URL = "https://raw.githubusercontent.com/JosuhaSanhueza/BlockList/refs/heads/main/GamesBlockList.txt"
+LOCAL_CACHE_GAMES = '/var/etc/gamecontrol_domains_cache.json'
+DEFAULT_FALLBACK_DOMAINS = [
+    "poki.com", "api.poki.com", "a.poki-cdn.com", "img.poki-cdn.com",
+    "stumbleguys.com", "roblox.com", "rbxcdn.com", "friv.com",
+    "y8.com", "crazygames.com", "kizi.com", "poki.es", "browsergames.com"
+]
 
 def log_msg(msg):
     timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -19,6 +25,7 @@ def log_msg(msg):
             f.write(formatted)
     except Exception:
         pass
+
 
 def parse_hosts_from_github(url):
     domains = set()
@@ -35,9 +42,26 @@ def parse_hosts_from_github(url):
                 domain = domain.lstrip('|').rstrip('^').strip()
                 if domain and domain != 'localhost' and '.' in domain:
                     domains.add(domain)
+        if domains:
+            try:
+                with open(LOCAL_CACHE_GAMES, 'w') as f:
+                    json.dump(list(domains), f)
+            except Exception:
+                pass
     except Exception as e:
-        log_msg(f"Error descargando lista de juegos: {e}")
+        log_msg(f"Advertencia descargando lista desde GitHub ({e}). Intentando cargar desde caché local...")
+        if os.path.exists(LOCAL_CACHE_GAMES):
+            try:
+                with open(LOCAL_CACHE_GAMES, 'r') as f:
+                    cached = json.load(f)
+                    if isinstance(cached, list):
+                        domains = set(cached)
+            except Exception:
+                pass
+        if not domains:
+            domains = set(DEFAULT_FALLBACK_DOMAINS)
     return sorted(list(domains))
+
 
 def update_game_control():
     log_msg("Iniciando sincronización con AdGuard Home API...")
