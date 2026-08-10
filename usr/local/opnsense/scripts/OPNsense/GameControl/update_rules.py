@@ -102,7 +102,8 @@ def update_game_control():
             for domain in domains:
                 user_rules.append(f"||{domain}^$client='{ip_addr}'")
 
-    # Escribir las reglas en la API de AdGuard Home (/control/filtering/set_rules)
+    # Escribir las reglas en AdGuard Home (intenta primero por API y si requiere login escribe directo a AdGuardHome.yaml)
+    rules_written = False
     try:
         rules_text = "\n".join(user_rules)
         req = urllib.request.Request(
@@ -112,10 +113,49 @@ def update_game_control():
             method='POST'
         )
         with urllib.request.urlopen(req, timeout=5) as resp:
-            pass
-        log_msg("Reglas de juegos sincronizadas con AdGuard Home API exitosamente (0 ms).")
+            rules_written = True
+            log_msg("Reglas de juegos sincronizadas con AdGuard Home API exitosamente (0 ms).")
     except Exception as e:
-        log_msg(f"Error enviando reglas a AdGuard Home API: {e}")
+        log_msg(f"API HTTP 401/Auth ({e}). Escribiendo reglas directamente en la configuración local de AdGuard Home...")
+
+    if not rules_written:
+        # Fallback de alta confiabilidad: Escribir reglas en AdGuardHome.yaml de OPNsense
+        for yaml_path in [
+            '/usr/local/bin/AdGuardHome.yaml',
+            '/var/db/adguardhome/AdGuardHome.yaml',
+            '/usr/local/etc/adguardhome/AdGuardHome.yaml'
+        ]:
+            if os.path.exists(yaml_path):
+                try:
+                    with open(yaml_path, 'r') as f:
+                        lines = f.readlines()
+                    
+                    new_lines = []
+                    in_user_rules = False
+                    for line in lines:
+                        if line.strip().startswith('user_rules:'):
+                            in_user_rules = True
+                            new_lines.append('user_rules:\n')
+                            for r in user_rules:
+                                new_lines.append(f'  - "{r}"\n')
+                            continue
+                        if in_user_rules:
+                            if line.startswith('  - ') or line.startswith('    '):
+                                continue
+                            else:
+                                in_user_rules = False
+                        new_lines.append(line)
+
+                    with open(yaml_path, 'w') as f:
+                        f.writelines(new_lines)
+                    
+                    log_msg(f"Reglas actualizadas directamente en {yaml_path}. Recargando AdGuard Home...")
+                    os.system('/usr/local/bin/AdGuardHome -s reload >/dev/null 2>&1 || service adguardhome reload >/dev/null 2>&1')
+                    rules_written = True
+                    break
+                except Exception as ex:
+                    log_msg(f"Error escribiendo en {yaml_path}: {ex}")
+
 
 if __name__ == '__main__':
     update_game_control()
