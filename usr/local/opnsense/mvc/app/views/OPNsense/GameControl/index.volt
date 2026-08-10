@@ -150,22 +150,19 @@
     <!-- PESTAÑA GUÍA DE CONFIGURACIÓN -->
     <div class="tab-pane" id="tab-guide">
         <div class="content-box" style="border-radius: 6px; padding: 25px; margin-bottom: 30px;">
-            <h2><i class="fa fa-cogs" style="color:#0288d1;"></i> Requisitos y Configuración de OPNsense</h2>
-            <p class="text-muted">Para garantizar que el bloqueo modular funcione sin evasión por parte de los estudiantes, verifique que las siguientes opciones estén habilitadas:</p>
+            <h2><i class="fa fa-cogs" style="color:#0288d1;"></i> Arquitectura Híbrida: Unbound + Dnsmasq (0 ms)</h2>
+            <p class="text-muted">Esta versión utiliza la arquitectura de redirección por Cortafuegos NAT (PF Table) para garantizar 0 milisegundos de latencia al habilitar o bloquear juegos, manteniendo activas todas las listas de seguridad.</p>
 
             <div class="row" style="margin-top: 25px;">
                 <div class="col-md-6">
                     <div class="panel panel-default" style="background-color: rgba(255,255,255,0.03); border-color: #444;">
                         <div class="panel-heading" style="background-color: rgba(2,136,209,0.2); color:#fff; font-weight:bold;">
-                            1. Unbound DNS & Blocklists
+                            1. Unbound DNS (Puerto 53 - Resolver por Defecto)
                         </div>
                         <div class="panel-body">
                             <ul>
-                                <li>Ir a <strong>Servicios -> Unbound DNS -> General</strong> y asegurar que Unbound esté <span style="color:#ffd54f; font-weight:bold;">Habilitado</span>.</li>
-                                <li>Ir a <strong>Servicios -> Unbound DNS -> Blocklists</strong>.</li>
-                                <li>Crear o verificar una entrada con Descripción <span style="color:#ffd54f; font-weight:bold;">Games</span> y agregar la URL:
-                                    <br><span style="font-size:12px; color:#ffd54f; font-family:monospace; word-break: break-all;">https://raw.githubusercontent.com/JosuhaSanhueza/BlockList/refs/heads/main/GamesBlockList.txt</span>
-                                </li>
+                                <li><strong>Servicios -> Unbound DNS -> General</strong>: Habilitado en puerto <span style="color:#ffd54f; font-weight:bold;">53</span>.</li>
+                                <li>Mantiene activas las listas de **Porno, Piratería, Proxies y Juegos** para todos los alumnos por defecto.</li>
                             </ul>
                         </div>
                     </div>
@@ -173,31 +170,29 @@
 
                 <div class="col-md-6">
                     <div class="panel panel-default" style="background-color: rgba(255,255,255,0.03); border-color: #444;">
-                        <div class="panel-heading" style="background-color: rgba(217,83,79,0.2); color:#fff; font-weight:bold;">
-                            2. Regla NAT Forwarding (Anti-Evasión Puerto 53)
+                        <div class="panel-heading" style="background-color: rgba(40,167,69,0.2); color:#fff; font-weight:bold;">
+                            2. Regla NAT Exención de Juegos (Respuesta 0 ms)
                         </div>
                         <div class="panel-body">
                             <ul>
                                 <li>Ir a <strong>Cortafuegos -> NAT -> Redirección de Puertos</strong>.</li>
-                                <li>Crear regla: Interfaz <span style="color:#ffd54f; font-weight:bold;">LAN</span>, Protocolo <span style="color:#ffd54f; font-weight:bold;">TCP/UDP</span>, Puerto Destino <span style="color:#ffd54f; font-weight:bold;">53 (DNS)</span>.</li>
-                                <li>Redirigir a IP Destino <span style="color:#ffd54f; font-weight:bold;">127.0.0.1</span> (IP local del Firewall) Puerto <span style="color:#ffd54f; font-weight:bold;">53</span>.</li>
-                                <li><em>Esto evita que cualquier estudiante cambie sus DNS a 8.8.8.8 o 1.1.1.1 para evadir la regla.</em></li>
-                                <li style="margin-top:10px;">📖 <a href="https://docs.opnsense.org/manual/how-tos/dns_redirect.html" target="_blank" style="color:#5bc0de; text-decoration:underline; font-weight:bold;"><i class="fa fa-external-link"></i> Ver Tutorial Oficial: OPNsense DNS Redirect / Port 53 NAT Forwarding</a></li>
+                                <li>Crear regla: Interfaz <span style="color:#ffd54f; font-weight:bold;">LAN</span>, Protocolo <span style="color:#ffd54f; font-weight:bold;">TCP/UDP</span>.</li>
+                                <li>Origen: Tabla <span style="color:#ffd54f; font-weight:bold;">game_allowed_ips</span> (Alumnos Habilitados).</li>
+                                <li>Redirigir a IP Destino <span style="color:#ffd54f; font-weight:bold;">127.0.0.1</span> Puerto <span style="color:#ffd54f; font-weight:bold;">5353</span> (Dnsmasq / Exención).</li>
                             </ul>
                         </div>
                     </div>
                 </div>
             </div>
 
-
             <div class="row" style="margin-top: 15px;">
                 <div class="col-md-12">
                     <div class="panel panel-default" style="background-color: rgba(255,255,255,0.03); border-color: #444;">
-                        <div class="panel-heading" style="background-color: rgba(40,167,69,0.2); color:#fff; font-weight:bold;">
-                            3. Dnsmasq / DHCP Leases (Mapeo de Hosts)
+                        <div class="panel-heading" style="background-color: rgba(240,173,78,0.2); color:#fff; font-weight:bold;">
+                            3. Dnsmasq (Puerto 5353 - Resolver para Alumnos Habilitados)
                         </div>
                         <div class="panel-body">
-                            <p>El plugin detecta automáticamente los nombres de equipo desde <strong>Servicios -> Dnsmasq DNS & DHCP -> Hosts</strong> o desde los arrendamientos de DHCP (DHCP Leases).</p>
+                            <p>En <strong>Servicios -> Dnsmasq DNS & DHCP -> General</strong>, configure el puerto en <span style="color:#ffd54f; font-weight:bold;">5353</span> y active el Reenvío a Unbound. De esta manera, el alumno habilitado navega a los juegos libremente pero **conserva todos los filtros de seguridad del colegio**. </p>
                         </div>
                     </div>
                 </div>
@@ -205,6 +200,7 @@
 
         </div>
     </div>
+
 
     <!-- PESTAÑA DEPURADOR Y LOGS -->
     <div class="tab-pane" id="tab-debug">
