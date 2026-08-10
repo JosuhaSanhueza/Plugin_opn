@@ -145,9 +145,10 @@ def update_game_control():
                         f.write(new_content)
                     
                     log_msg(f"Reglas actualizadas directamente en {yaml_path}. Recargando AdGuard Home...")
-                    os.system('/usr/local/bin/AdGuardHome -s restart >/dev/null 2>&1 || service adguardhome restart >/dev/null 2>&1')
+                    os.system('/usr/local/bin/AdGuardHome -s restart >/dev/null 2>&1 || service adguardhome restart >/dev/null 2>&1 || pkill -HUP AdGuardHome >/dev/null 2>&1')
                     rules_written = True
                     break
+
                 except Exception as ex:
                     log_msg(f"Error escribiendo en {yaml_path}: {ex}")
 
