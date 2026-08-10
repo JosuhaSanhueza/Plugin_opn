@@ -17,7 +17,9 @@ rm -f /var/etc/gamecontrol_unblocked.json
 rm -f /var/etc/gamecontrol_pf_blocked.txt
 rm -f /tmp/opnsense_menu_cache.json
 rm -f /tmp/opnsense_acl_cache.json
+rm -f /tmp/opnsense_boot_completed
 rm -rf /tmp/phalcon*
+rm -rf /tmp/opnsense_*
 rm -f /tmp/os-gamecontrol*
 
 # 2. Limpiar inclusión en /var/unbound/unbound.conf
@@ -35,8 +37,10 @@ fi
 
 # 5. Forzar reconstrucción de caché de menú y ACL de OPNsense
 /usr/local/sbin/configctl service reload all >/dev/null 2>&1
+/usr/local/sbin/configctl webgui restart >/dev/null 2>&1
 /usr/local/sbin/pluginctl -s configd restart
 /usr/local/sbin/pluginctl -c webgui restart
+
 
 echo "=== Desinstalación completada exitosamente. Conexión a internet y menú de OPNsense restaurados. ==="
 
