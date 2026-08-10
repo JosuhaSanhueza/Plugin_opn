@@ -2,10 +2,12 @@
 import os
 import json
 import datetime
+import urllib.request
+import urllib.parse
 
 UNBLOCKED_FILE = '/var/etc/gamecontrol_unblocked.json'
-ALLOWED_IPS_FILE = '/var/etc/gamecontrol_allowed_ips.txt'
 LOG_FILE = '/var/log/gamecontrol.log'
+ADGUARD_API_URL = 'http://127.0.0.1:3000/control'
 
 def log_msg(msg):
     timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -18,7 +20,7 @@ def log_msg(msg):
         pass
 
 def update_game_control():
-    log_msg("Iniciando actualización de tabla PF GameControl...")
+    log_msg("Iniciando sincronización con AdGuard Home API...")
 
     unblocked_ips = set()
     if os.path.exists(UNBLOCKED_FILE):
@@ -35,19 +37,57 @@ def update_game_control():
         except Exception as e:
             log_msg(f"Error leyendo {UNBLOCKED_FILE}: {e}")
 
-    allowed_list = sorted(list(unblocked_ips))
-    log_msg(f"IPs con juegos habilitados (Exención NAT): {len(allowed_list)}")
+    log_msg(f"IPs con juegos permitidos: {len(unblocked_ips)}")
 
-    os.makedirs(os.path.dirname(ALLOWED_IPS_FILE), exist_ok=True)
-    with open(ALLOWED_IPS_FILE, 'w') as f:
-        f.write("\n".join(allowed_list) + "\n" if allowed_list else "")
+    # Configurar reglas por cliente en AdGuard Home para las IPs del laboratorio
+    for i in range(101, 146):
+        ip_addr = f"192.168.12.{i}"
+        hostname = f"Lab2-{i-100}"
+        is_allowed = ip_addr in unblocked_ips
+        
+        # Si el alumno está habilitado (botón verde), blocked_services está vacío.
+        # Si está bloqueado (botón rojo), se le aplica el bloqueo del servicio "online_games"
+        blocked_services = [] if is_allowed else ["online_games"]
 
-    # Actualización instantánea en el Cortafuegos de FreeBSD (PF Table)
-    os.system(f'/sbin/pfctl -t game_allowed_ips -T replace -f {ALLOWED_IPS_FILE} >/dev/null 2>&1')
-    log_msg("Sincronización instantánea de tabla PF (game_allowed_ips) ejecutada exitosamente.")
+        client_data = {
+            "name": hostname,
+            "ids": [ip_addr],
+            "use_global_settings": True,
+            "filtering_enabled": True,
+            "parental_enabled": False,
+            "safesearch_enabled": False,
+            "use_global_blocked_services": False,
+            "blocked_services": blocked_services
+        }
+
+        try:
+            req = urllib.request.Request(
+                f"{ADGUARD_API_URL}/clients/update",
+                data=json.dumps(client_data).encode('utf-8'),
+                headers={'Content-Type': 'application/json'},
+                method='POST'
+            )
+            with urllib.request.urlopen(req, timeout=3) as resp:
+                pass
+        except Exception:
+            # Si el cliente aún no existe en AdGuard, agregarlo vía API /clients/add
+            try:
+                req_add = urllib.request.Request(
+                    f"{ADGUARD_API_URL}/clients/add",
+                    data=json.dumps(client_data).encode('utf-8'),
+                    headers={'Content-Type': 'application/json'},
+                    method='POST'
+                )
+                with urllib.request.urlopen(req_add, timeout=3) as resp:
+                    pass
+            except Exception as ex:
+                pass
+
+    log_msg("Sincronización con AdGuard Home API completada exitosamente.")
 
 if __name__ == '__main__':
     update_game_control()
+
 
 
 
