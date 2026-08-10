@@ -150,56 +150,81 @@
     <!-- PESTAÑA GUÍA DE CONFIGURACIÓN -->
     <div class="tab-pane" id="tab-guide">
         <div class="content-box" style="border-radius: 6px; padding: 25px; margin-bottom: 30px;">
-            <h2><i class="fa fa-cogs" style="color:#0288d1;"></i> Arquitectura Híbrida: Unbound + Dnsmasq (0 ms)</h2>
-            <p class="text-muted">Esta versión utiliza la arquitectura de redirección por Cortafuegos NAT (PF Table) para garantizar 0 milisegundos de latencia al habilitar o bloquear juegos, manteniendo activas todas las listas de seguridad.</p>
+            <h2><i class="fa fa-cogs" style="color:#0288d1;"></i> Guía de Configuración Paso a Paso (OPNsense)</h2>
+            <p class="text-muted">Para asegurar que el plugin funcione en tiempo real (0 ms de respuesta) sin perder la seguridad de Unbound, complete los 3 sencillos pasos a continuación:</p>
 
             <div class="row" style="margin-top: 25px;">
-                <div class="col-md-6">
+                <!-- PASO 1 -->
+                <div class="col-md-4">
                     <div class="panel panel-default" style="background-color: rgba(255,255,255,0.03); border-color: #444;">
                         <div class="panel-heading" style="background-color: rgba(2,136,209,0.2); color:#fff; font-weight:bold;">
-                            1. Unbound DNS (Puerto 53 - Resolver por Defecto)
+                            1. Crear Alias del Cortafuegos
                         </div>
                         <div class="panel-body">
                             <ul>
-                                <li><strong>Servicios -> Unbound DNS -> General</strong>: Habilitado en puerto <span style="color:#ffd54f; font-weight:bold;">53</span>.</li>
-                                <li>Mantiene activas las listas de **Porno, Piratería, Proxies y Juegos** para todos los alumnos por defecto.</li>
+                                <li>Ir a <strong>Cortafuegos -> Aliases</strong> y hacer clic en <strong>+ Añadir</strong>.</li>
+                                <li><strong>Nombre</strong>: <span style="color:#ffd54f; font-weight:bold;">game_allowed_ips</span> *(Exacto)*.</li>
+                                <li><strong>Tipo</strong>: Seleccionar <span style="color:#ffd54f; font-weight:bold;">Externa (avanzado)</span>.</li>
+                                <li><strong>Descripción</strong>: <span style="color:#aaa;">IPs de Alumnos Habilitados</span>.</li>
+                                <li>Guardar y Aplicar Cambios.</li>
                             </ul>
                         </div>
                     </div>
                 </div>
 
-                <div class="col-md-6">
+                <!-- PASO 2 -->
+                <div class="col-md-4">
                     <div class="panel panel-default" style="background-color: rgba(255,255,255,0.03); border-color: #444;">
                         <div class="panel-heading" style="background-color: rgba(40,167,69,0.2); color:#fff; font-weight:bold;">
-                            2. Regla NAT Exención de Juegos (Respuesta 0 ms)
+                            2. Reglas NAT (Destination NAT)
                         </div>
                         <div class="panel-body">
                             <ul>
-                                <li>Ir a <strong>Cortafuegos -> NAT -> Redirección de Puertos</strong>.</li>
-                                <li>Crear regla: Interfaz <span style="color:#ffd54f; font-weight:bold;">LAN</span>, Protocolo <span style="color:#ffd54f; font-weight:bold;">TCP/UDP</span>.</li>
-                                <li>Origen: Tabla <span style="color:#ffd54f; font-weight:bold;">game_allowed_ips</span> (Alumnos Habilitados).</li>
-                                <li>Redirigir a IP Destino <span style="color:#ffd54f; font-weight:bold;">127.0.0.1</span> Puerto <span style="color:#ffd54f; font-weight:bold;">5353</span> (Dnsmasq / Exención).</li>
+                                <li>Ir a <strong>Cortafuegos -> NAT -> Destination NAT</strong>.</li>
+                                <li><strong>Regla 1 (Exención Alumnos Habilitados)</strong>:
+                                    <br>- Interfaz: <span style="color:#ffd54f;">LAN</span>, Protocolo: <span style="color:#ffd54f;">TCP/UDP</span>.
+                                    <br>- Dirección Origen: <span style="color:#ffd54f;">game_allowed_ips</span>.
+                                    <br>- Puerto Destino: <span style="color:#ffd54f;">53 (DNS)</span>.
+                                    <br>- Redirect Target IP: <span style="color:#ffd54f;">127.0.0.1</span>.
+                                    <br>- Redirect Target Port: <span style="color:#ffd54f;">5353</span> (Dnsmasq).
+                                </li>
+                                <li style="margin-top:8px;">⚠️ <strong>Posición</strong>: Colocar esta regla <strong>ARRIBA</strong> de su regla general de "Forzar Dns".</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PASO 3 -->
+                <div class="col-md-4">
+                    <div class="panel panel-default" style="background-color: rgba(255,255,255,0.03); border-color: #444;">
+                        <div class="panel-heading" style="background-color: rgba(240,173,78,0.2); color:#fff; font-weight:bold;">
+                            3. Ajuste de Dnsmasq (Puerto 5353)
+                        </div>
+                        <div class="panel-body">
+                            <ul>
+                                <li>Ir a <strong>Servicios -> Dnsmasq DNS & DHCP -> General</strong>.</li>
+                                <li>Cambiar el <strong>Puerto de Escucha</strong> a <span style="color:#ffd54f; font-weight:bold;">5353</span>.</li>
+                                <li>En las opciones de reenvío, agregar:
+                                    <br><span style="font-size:12px; color:#ffd54f; font-family:monospace;">server=127.0.0.1#53</span>
+                                </li>
+                                <li>Guardar y Aplicar Cambios.</li>
                             </ul>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="row" style="margin-top: 15px;">
+            <div class="row" style="margin-top: 10px;">
                 <div class="col-md-12">
-                    <div class="panel panel-default" style="background-color: rgba(255,255,255,0.03); border-color: #444;">
-                        <div class="panel-heading" style="background-color: rgba(240,173,78,0.2); color:#fff; font-weight:bold;">
-                            3. Dnsmasq (Puerto 5353 - Resolver para Alumnos Habilitados)
-                        </div>
-                        <div class="panel-body">
-                            <p>En <strong>Servicios -> Dnsmasq DNS & DHCP -> General</strong>, configure el puerto en <span style="color:#ffd54f; font-weight:bold;">5353</span> y active el Reenvío a Unbound. De esta manera, el alumno habilitado navega a los juegos libremente pero **conserva todos los filtros de seguridad del colegio**. </p>
-                        </div>
+                    <div class="alert alert-info" style="background-color: rgba(2,136,209,0.1); border-color: #0288d1; color:#fff;">
+                        <i class="fa fa-info-circle"></i> <strong>Respuesta Instantánea (0 ms)</strong>: Con esta estructura, al hacer clic en el botón verde desde el panel de control, la IP se añade a la tabla del cortafuegos de inmediato. El alumno navegará a los juegos al instante y continuará protegido por todas las reglas escolares de Unbound.
                     </div>
                 </div>
             </div>
 
         </div>
     </div>
+
 
 
     <!-- PESTAÑA DEPURADOR Y LOGS -->
