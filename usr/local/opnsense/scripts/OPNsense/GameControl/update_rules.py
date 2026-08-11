@@ -16,9 +16,9 @@ def log_msg(msg):
     except Exception:
         pass
 
-def get_domains_directly_from_adguard_file():
+def get_games_domains_from_exact_filter():
     domains = set()
-    for base_dir in ["/var/db/adguardhome", "/usr/local/bin", "/var/adguardhome", "/usr/local/etc/adguardhome"]:
+    for base_dir in ["/usr/local/bin", "/var/db/adguardhome", "/var/adguardhome", "/usr/local/etc/adguardhome"]:
         filters_dir = os.path.join(base_dir, "data", "filters")
         if os.path.exists(filters_dir):
             try:
@@ -27,9 +27,10 @@ def get_domains_directly_from_adguard_file():
                         if file.endswith(".txt"):
                             fpath = os.path.join(root, file)
                             with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
-                                content = f.read()
-                                if "crazygames" in content or "poki" in content or "roblox" in content:
-                                    for line in content.splitlines():
+                                lines = f.readlines()
+                                # Verificar que sea el archivo con la lista Games de ~688 lineas
+                                if len(lines) < 2000 and ("crazygames.com" in "".join(lines[:30]) or "1001juegos.com" in "".join(lines[:30])):
+                                    for line in lines:
                                         line = line.strip()
                                         if not line or line.startswith("#") or line.startswith("!") or line.startswith("<") or line.startswith("="):
                                             continue
@@ -38,10 +39,9 @@ def get_domains_directly_from_adguard_file():
                                         domain = domain.lstrip("|").rstrip("^").strip()
                                         if domain and domain != "localhost" and "." in domain and not domain.startswith("_"):
                                             domains.add(domain)
-                                    if len(domains) > 50:
-                                        log_msg("Leidos " + str(len(domains)) + " dominios directamente del archivo de filtro local de AdGuard (" + fpath + ")")
-                                        return sorted(list(domains))
-            except Exception as ex:
+                                    log_msg("Leidos exactamente " + str(len(domains)) + " dominios de juegos desde el filtro de AdGuard (" + fpath + ")")
+                                    return sorted(list(domains))
+            except Exception:
                 pass
     if os.path.exists(LOCAL_CACHE_GAMES):
         try:
@@ -56,9 +56,9 @@ def get_domains_directly_from_adguard_file():
     return sorted(list(domains))
 
 def update_game_control():
-    log_msg("Sincronizando exenciones leyendo directamente la lista almacenada localmente en AdGuard Home...")
-    domains = get_domains_directly_from_adguard_file()
-    log_msg("Total dominios obtenidos desde la lista local de AdGuard: " + str(len(domains)))
+    log_msg("Sincronizando exenciones de juegos leyendo la lista Games de AdGuard Home...")
+    domains = get_games_domains_from_exact_filter()
+    log_msg("Total dominios de la lista Games: " + str(len(domains)))
 
     unblocked_ips = set()
     if os.path.exists(UNBLOCKED_FILE):
