@@ -123,8 +123,8 @@ def update_game_control():
                         new_lines.append(line)
                     with open(yaml_path, "w") as f:
                         f.writelines(new_lines)
-                    log_msg("Excepciones con pipe | (" + str(len(user_rules)) + " lineas) escritas en " + yaml_path + ". Recargando AdGuard...")
-                    os.system("/usr/local/bin/AdGuardHome -s restart >/dev/null 2>&1 || service adguardhome restart >/dev/null 2>&1 || pkill -HUP AdGuardHome >/dev/null 2>&1")
+                    log_msg("Excepciones con pipe | (" + str(len(user_rules)) + " lineas) escritas en " + yaml_path + ". Recargando AdGuard en segundo plano...")
+                    os.system("(/usr/local/bin/AdGuardHome -s reload || /usr/local/bin/AdGuardHome -s restart || service adguardhome restart) >/dev/null 2>&1 &")
                     rules_written = True
                     break
                 except Exception as ex:
