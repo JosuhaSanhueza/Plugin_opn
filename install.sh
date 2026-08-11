@@ -39,3 +39,5 @@ echo "=== ¡Instalación limpia finalizada exitosamente! ==="
 
 
 
+rm -rf /usr/local/opnsense/mvc/app/cache/*
+rm -rf /tmp/volt_*
