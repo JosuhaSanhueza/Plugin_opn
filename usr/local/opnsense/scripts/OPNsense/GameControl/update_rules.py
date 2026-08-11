@@ -8,7 +8,8 @@ LOCAL_CACHE_GAMES = "/var/etc/gamecontrol_domains_cache.json"
 
 def log_msg(msg):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    formatted = "[" + timestamp + "] " + str(msg) + "\n"
+    formatted = "[" + timestamp + "] " + str(msg) + "
+"
     print(formatted.strip())
     try:
         with open(LOG_FILE, "a") as f:
@@ -28,7 +29,8 @@ def get_games_domains_from_exact_filter():
                             fpath = os.path.join(root, file)
                             with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
                                 lines = f.readlines()
-                                if len(lines) < 2000 and ("crazygames.com" in "".join(lines[:30]) or "1001juegos.com" in "".join(lines[:30])):
+                                content_head = "".join(lines[:30])
+                                if len(lines) < 2000 and ("1001juegos.com" in content_head or "crazygames.com" in content_head or "GamesBlockList" in content_head):
                                     for line in lines:
                                         line = line.strip()
                                         if not line or line.startswith("#") or line.startswith("!") or line.startswith("<") or line.startswith("="):
