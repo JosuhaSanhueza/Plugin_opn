@@ -18,6 +18,13 @@ rm -f /tmp/opnsense_menu_cache.json
 
 echo "=== 2. Copiando archivos del plugin ==="
 cp -r usr/local/* /usr/local/
+rm -f /usr/local/opnsense/mvc/app/controllers/OPNsense/GameControl/Api/ServiceController.php.bak
+# Eliminar posibles bytes BOM o espacios al inicio de ServiceController.php
+sed -i "" "1s/^[[:space:]]*//" /usr/local/opnsense/mvc/app/controllers/OPNsense/GameControl/Api/ServiceController.php
+rm -rf /usr/local/opnsense/mvc/app/cache/*
+rm -rf /tmp/volt_*
+rm -f /var/crash/*
+
 
 echo "=== 3. Asignando permisos de ejecución ==="
 chmod +x /usr/local/opnsense/scripts/OPNsense/GameControl/update_rules.py
