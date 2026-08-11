@@ -19,7 +19,17 @@ class ServiceController extends ApiControllerBase
         $unblockedIps = array();
         $unblockedFile = "/var/etc/gamecontrol_unblocked.json";
         if (file_exists($unblockedFile)) {
-            $unblockedIps = json_decode(file_get_contents($unblockedFile), true) ?: array();
+            $raw = file_get_contents($unblockedFile);
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $k => $v) {
+                    if (is_numeric($k)) {
+                        $unblockedIps[$v] = 0;
+                    } else {
+                        $unblockedIps[$k] = $v;
+                    }
+                }
+            }
         }
 
         $hosts = array();
@@ -44,23 +54,43 @@ class ServiceController extends ApiControllerBase
             }
         }
 
-        $leasesFile = "/var/dhcpd/var/db/dhcpd.leases";
-        if (file_exists($leasesFile)) {
-            $content = file_get_contents($leasesFile);
-            preg_match_all("/lease\s+([0-9\.]+)\s*\{[^}]*hardware\s+ethernet\s+([0-9a-f:]+);/i", $content, $matches, PREG_SET_ORDER);
-            foreach ($matches as $m) {
-                $ip = $m[1];
-                $ipLong = ip2long($ip);
-                if ($ipLong !== false && $ipLong >= $ipStartLong && $ipLong <= $ipEndLong && !isset($hosts[$ip])) {
-                    $isBlocked = isset($unblockedIps[$ip]) && $unblockedIps[$ip] == 0 ? 0 : 1;
-                    $hosts[$ip] = array(
-                        "hostname" => "Host-" . str_replace(".", "-", $ip),
-                        "ip" => $ip,
-                        "ip_long" => $ipLong,
-                        "mac" => $m[2],
-                        "blocked" => $isBlocked
-                    );
+        $leasesFiles = array(
+            "/var/dhcpd/var/db/dhcpd.leases",
+            "/var/db/dhcpd.leases",
+            "/var/db/dnsmasq.leases"
+        );
+        foreach ($leasesFiles as $leasesFile) {
+            if (file_exists($leasesFile)) {
+                $content = file_get_contents($leasesFile);
+                preg_match_all("/lease\s+([0-9\.]+)\s*\{[^}]*hardware\s+ethernet\s+([0-9a-f:]+);/i", $content, $matches, PREG_SET_ORDER);
+                foreach ($matches as $m) {
+                    $ip = $m[1];
+                    $ipLong = ip2long($ip);
+                    if ($ipLong !== false && $ipLong >= $ipStartLong && $ipLong <= $ipEndLong && !isset($hosts[$ip])) {
+                        $isBlocked = isset($unblockedIps[$ip]) && $unblockedIps[$ip] == 0 ? 0 : 1;
+                        $hosts[$ip] = array(
+                            "hostname" => "Host-" . str_replace(".", "-", $ip),
+                            "ip" => $ip,
+                            "ip_long" => $ipLong,
+                            "mac" => $m[2],
+                            "blocked" => $isBlocked
+                        );
+                    }
                 }
+            }
+        }
+
+        if (empty($hosts) && $ipStartLong !== false && $ipEndLong !== false) {
+            for ($i = $ipStartLong; $i <= $ipEndLong; $i++) {
+                $ip = long2ip($i);
+                $isBlocked = isset($unblockedIps[$ip]) && $unblockedIps[$ip] == 0 ? 0 : 1;
+                $hosts[$ip] = array(
+                    "hostname" => "Estudiante-" . str_replace(".", "-", $ip),
+                    "ip" => $ip,
+                    "ip_long" => $i,
+                    "mac" => "-",
+                    "blocked" => $isBlocked
+                );
             }
         }
 
