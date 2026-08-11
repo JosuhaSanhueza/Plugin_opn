@@ -80,17 +80,19 @@ class ServiceController extends ApiControllerBase
             }
         }
 
-        if (empty($hosts) && $ipStartLong !== false && $ipEndLong !== false) {
+        if ($ipStartLong !== false && $ipEndLong !== false) {
             for ($i = $ipStartLong; $i <= $ipEndLong; $i++) {
                 $ip = long2ip($i);
-                $isBlocked = isset($unblockedIps[$ip]) && $unblockedIps[$ip] == 0 ? 0 : 1;
-                $hosts[$ip] = array(
-                    "hostname" => "Estudiante-" . str_replace(".", "-", $ip),
-                    "ip" => $ip,
-                    "ip_long" => $i,
-                    "mac" => "-",
-                    "blocked" => $isBlocked
-                );
+                if (!isset($hosts[$ip])) {
+                    $isBlocked = isset($unblockedIps[$ip]) && $unblockedIps[$ip] == 0 ? 0 : 1;
+                    $hosts[$ip] = array(
+                        "hostname" => "Estudiante-" . str_replace(".", "-", $ip),
+                        "ip" => $ip,
+                        "ip_long" => $i,
+                        "mac" => "-",
+                        "blocked" => $isBlocked
+                    );
+                }
             }
         }
 

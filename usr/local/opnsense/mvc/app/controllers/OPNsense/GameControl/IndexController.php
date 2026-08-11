@@ -12,5 +12,3 @@ class IndexController extends BaseIndexController
         $this->view->pick('OPNsense/GameControl/index');
     }
 }
-
-
