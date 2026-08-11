@@ -48,7 +48,7 @@ def update_game_control():
             method="POST"
         )
         with urllib.request.urlopen(req, timeout=5) as resp:
-            log_msg("Reglas de excepcion actualizadas via API sin modificar YAML.")
+            log_msg("Reglas de excepcion actualizadas via API exitosamente.")
     except Exception as e:
         log_msg("Advertencia enviando a API: " + str(e))
 
