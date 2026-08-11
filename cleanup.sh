@@ -1,38 +1,30 @@
 #!/bin/sh
-# Cleanup script for GameControl plugin in OPNsense
+# Script de desinstalación limpia y remoción completa del plugin GameControl
 
-echo "Iniciando desinstalación completa y limpieza absoluta de GameControl..."
-
-# 1. Detener servicios y tareas relacionadas
-/usr/local/sbin/configctl service reload all >/dev/null 2>&1
-
-# 2. Restaurar /var/unbound/unbound.conf eliminando cualquier include de gamecontrol
-if [ -f /var/unbound/unbound.conf ]; then
-    sed -i '' '/gamecontrol/d' /var/unbound/unbound.conf
+if [ "$(id -u)" -ne 0 ]; then
+    echo "❌ Error: Este script debe ejecutarse como root."
+    exit 1
 fi
 
-# 3. Eliminar archivos de reglas y modelos del plugin
+echo "=== 1. Deteniendo y eliminando archivos del plugin ==="
 rm -rf /usr/local/opnsense/mvc/app/models/OPNsense/GameControl
 rm -rf /usr/local/opnsense/mvc/app/views/OPNsense/GameControl
 rm -rf /usr/local/opnsense/mvc/app/controllers/OPNsense/GameControl
 rm -rf /usr/local/opnsense/scripts/OPNsense/GameControl
 rm -f /usr/local/opnsense/service/conf/actions.d/actions_gamecontrol.conf
-rm -f /var/unbound/etc/gamecontrol.conf
-rm -f /usr/local/etc/unbound/unbound.conf.d/gamecontrol.conf
 rm -f /var/etc/gamecontrol_unblocked.json
+rm -f /var/etc/gamecontrol_domains_cache.json
+rm -f /var/log/gamecontrol.log
 
-# 4. Regenerar plantillas oficiales de Unbound y reiniciar el resolver
-/usr/local/sbin/configctl template reload OPNsense/Unbound >/dev/null 2>&1
-/usr/local/sbin/configctl unbound dnsbl >/dev/null 2>&1
-/usr/local/sbin/unbound-control reload >/dev/null 2>&1 || /usr/local/sbin/pluginctl -s unbound restart
+echo "=== 2. Limpiando cachés de OPNsense y PHP ==="
+rm -f /tmp/opnsense_menu_cache.json
+rm -rf /usr/local/opnsense/mvc/app/cache/*
+rm -rf /tmp/volt_*
 
-# 5. Forzar reconstrucción de caché de menú y ACL de OPNsense
-/usr/local/sbin/configctl service reload all >/dev/null 2>&1
-/usr/local/sbin/configctl webgui restart >/dev/null 2>&1
+echo "=== 3. Reconstruyendo servicios y menú web de OPNsense ==="
+/usr/local/etc/rc.configure_plugins
+/usr/local/sbin/configctl template reload OPNsense/Menu >/dev/null 2>&1
 /usr/local/sbin/pluginctl -s configd restart
 /usr/local/sbin/pluginctl -c webgui restart
 
-
-echo "=== Desinstalación completada exitosamente. Conexión a internet y menú de OPNsense restaurados. ==="
-
-
+echo "=== ¡Desinstalación completa finalizada exitosamente! ==="
