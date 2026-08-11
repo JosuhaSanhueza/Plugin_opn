@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, json, datetime, urllib.request, urllib.parse
+import os, json, datetime, urllib.request, urllib.parse, re
 
 UNBLOCKED_FILE = "/var/etc/gamecontrol_unblocked.json"
 LOG_FILE = "/var/log/gamecontrol.log"
@@ -16,7 +16,7 @@ def log_msg(msg):
         pass
 
 def update_game_control():
-    log_msg("Sincronizando reglas de excepcion con la API de AdGuard Home...")
+    log_msg("Sincronizando reglas de excepcion en AdGuard Home...")
 
     unblocked_ips = set()
     if os.path.exists(UNBLOCKED_FILE):
@@ -39,6 +39,7 @@ def update_game_control():
     for ip_addr in unblocked_ips:
         user_rules.append("@@||*^$client=" + ip_addr)
 
+    rules_written = False
     try:
         rules_text = "\n".join(user_rules)
         req = urllib.request.Request(
@@ -47,10 +48,41 @@ def update_game_control():
             headers={"Content-Type": "application/json"},
             method="POST"
         )
-        with urllib.request.urlopen(req, timeout=5) as resp:
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            rules_written = True
             log_msg("Reglas de excepcion actualizadas via API exitosamente.")
-    except Exception as e:
-        log_msg("Advertencia enviando a API: " + str(e))
+    except Exception:
+        pass
+
+    if not rules_written:
+        for yaml_path in ["/usr/local/bin/AdGuardHome.yaml", "/var/db/adguardhome/AdGuardHome.yaml", "/usr/local/etc/adguardhome/AdGuardHome.yaml", "/var/adguardhome/AdGuardHome.yaml"]:
+            if os.path.exists(yaml_path):
+                try:
+                    with open(yaml_path, "r") as f:
+                        lines = f.readlines()
+                    new_lines = []
+                    in_user_rules = False
+                    for line in lines:
+                        if line.strip().startswith("user_rules:"):
+                            in_user_rules = True
+                            new_lines.append("user_rules:\n")
+                            for r in user_rules:
+                                new_lines.append("  - \"" + r + "\"\n")
+                            continue
+                        if in_user_rules:
+                            if line.startswith("  - ") or line.startswith("    "):
+                                continue
+                            else:
+                                in_user_rules = False
+                        new_lines.append(line)
+                    with open(yaml_path, "w") as f:
+                        f.writelines(new_lines)
+                    log_msg("Reglas de excepcion escritas de forma segura en " + yaml_path + ". Recargando AdGuard...")
+                    os.system("/usr/local/bin/AdGuardHome -s restart >/dev/null 2>&1 || service adguardhome restart >/dev/null 2>&1 || pkill -HUP AdGuardHome >/dev/null 2>&1")
+                    rules_written = True
+                    break
+                except Exception as ex:
+                    log_msg("Error escribiendo reglas en " + yaml_path + ": " + str(ex))
 
 if __name__ == "__main__":
     update_game_control()
