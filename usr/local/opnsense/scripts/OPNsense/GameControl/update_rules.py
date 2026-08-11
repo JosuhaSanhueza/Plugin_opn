@@ -38,7 +38,8 @@ def parse_hosts_from_github(url):
                     json.dump(list(domains), f)
             except Exception:
                 pass
-    except Exception:
+    except Exception as e:
+        log_msg("Advertencia descargando lista desde GitHub. Cargando cache local...")
         if os.path.exists(LOCAL_CACHE_GAMES):
             try:
                 with open(LOCAL_CACHE_GAMES, "r") as f:
@@ -78,6 +79,8 @@ def update_game_control():
             user_rules.append("@@||" + domain + "^$client=" + clients_param)
             user_rules.append("@@||*." + domain + "^$client=" + clients_param)
 
+    log_msg("Generando un total de " + str(len(user_rules)) + " lineas de exencion en AdGuard Home")
+
     rules_written = False
     try:
         rules_text = "\n".join(user_rules)
@@ -116,7 +119,7 @@ def update_game_control():
                         new_lines.append(line)
                     with open(yaml_path, "w") as f:
                         f.writelines(new_lines)
-                    log_msg("Excepciones ultracompactas escritas en " + yaml_path + ". Recargando AdGuard...")
+                    log_msg("Excepciones (" + str(len(user_rules)) + " lineas) escritas en " + yaml_path + ". Recargando AdGuard...")
                     os.system("/usr/local/bin/AdGuardHome -s restart >/dev/null 2>&1 || service adguardhome restart >/dev/null 2>&1 || pkill -HUP AdGuardHome >/dev/null 2>&1")
                     rules_written = True
                     break
