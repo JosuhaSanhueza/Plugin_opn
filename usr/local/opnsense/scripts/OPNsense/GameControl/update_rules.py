@@ -8,8 +8,7 @@ LOCAL_CACHE_GAMES = "/var/etc/gamecontrol_domains_cache.json"
 
 def log_msg(msg):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    formatted = "[" + timestamp + "] " + str(msg) + "
-"
+    formatted = "[" + timestamp + "] " + str(msg) + "\n"
     print(formatted.strip())
     try:
         with open(LOG_FILE, "a") as f:
