@@ -4,7 +4,6 @@ import os, json, datetime, urllib.request, urllib.parse, re
 UNBLOCKED_FILE = "/var/etc/gamecontrol_unblocked.json"
 LOG_FILE = "/var/log/gamecontrol.log"
 ADGUARD_API_URL = "http://127.0.0.1:3000/control"
-GITHUB_GAMES_URL = "https://raw.githubusercontent.com/JosuhaSanhueza/BlockList/refs/heads/main/GamesBlockList.txt"
 LOCAL_CACHE_GAMES = "/var/etc/gamecontrol_domains_cache.json"
 
 def log_msg(msg):
@@ -17,45 +16,49 @@ def log_msg(msg):
     except Exception:
         pass
 
-def parse_hosts_from_github(url):
+def get_domains_directly_from_adguard_file():
     domains = set()
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "OPNsense-GameControl"})
-        with urllib.request.urlopen(req, timeout=10) as response:
-            content = response.read().decode("utf-8")
-            for line in content.splitlines():
-                line = line.strip()
-                if not line or line.startswith("#") or line.startswith("!") or line.startswith("<") or line.startswith("="):
-                    continue
-                parts = line.split()
-                domain = parts[1] if len(parts) >= 2 else parts[0]
-                domain = domain.lstrip("|").rstrip("^").strip()
-                if domain and domain != "localhost" and "." in domain and not domain.startswith("_"):
-                    domains.add(domain)
-        if domains:
+    for base_dir in ["/var/db/adguardhome", "/usr/local/bin", "/var/adguardhome", "/usr/local/etc/adguardhome"]:
+        filters_dir = os.path.join(base_dir, "data", "filters")
+        if os.path.exists(filters_dir):
             try:
-                os.makedirs(os.path.dirname(LOCAL_CACHE_GAMES), exist_ok=True)
-                with open(LOCAL_CACHE_GAMES, "w") as f:
-                    json.dump(list(domains), f)
-                log_msg("Guardada cache local de juegos con " + str(len(domains)) + " dominios")
+                for root, dirs, files in os.walk(filters_dir):
+                    for file in files:
+                        if file.endswith(".txt"):
+                            fpath = os.path.join(root, file)
+                            with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+                                content = f.read()
+                                if "crazygames" in content or "poki" in content or "roblox" in content:
+                                    for line in content.splitlines():
+                                        line = line.strip()
+                                        if not line or line.startswith("#") or line.startswith("!") or line.startswith("<") or line.startswith("="):
+                                            continue
+                                        parts = line.split()
+                                        domain = parts[1] if len(parts) >= 2 else parts[0]
+                                        domain = domain.lstrip("|").rstrip("^").strip()
+                                        if domain and domain != "localhost" and "." in domain and not domain.startswith("_"):
+                                            domains.add(domain)
+                                    if len(domains) > 50:
+                                        log_msg("Leidos " + str(len(domains)) + " dominios directamente del archivo de filtro local de AdGuard (" + fpath + ")")
+                                        return sorted(list(domains))
             except Exception as ex:
-                log_msg("Error guardando cache local: " + str(ex))
-    except Exception as e:
-        log_msg("Advertencia descargando desde GitHub. Cargando cache local...")
-        if os.path.exists(LOCAL_CACHE_GAMES):
-            try:
-                with open(LOCAL_CACHE_GAMES, "r") as f:
-                    cached = json.load(f)
-                    if isinstance(cached, list):
-                        domains = set(cached)
-            except Exception as ex:
-                log_msg("Error leyendo cache local: " + str(ex))
+                pass
+    if os.path.exists(LOCAL_CACHE_GAMES):
+        try:
+            with open(LOCAL_CACHE_GAMES, "r") as f:
+                cached = json.load(f)
+                if isinstance(cached, list):
+                    domains = set(cached)
+                    log_msg("Leidos " + str(len(domains)) + " dominios desde cache local")
+                    return sorted(list(domains))
+        except Exception:
+            pass
     return sorted(list(domains))
 
 def update_game_control():
-    log_msg("Sincronizando exenciones ultracompactas (IPs concatenadas por coma) para AdGuard Home...")
-    domains = parse_hosts_from_github(GITHUB_GAMES_URL)
-    log_msg("Se obtuvieron " + str(len(domains)) + " dominios de juegos de GitHub")
+    log_msg("Sincronizando exenciones leyendo directamente la lista almacenada localmente en AdGuard Home...")
+    domains = get_domains_directly_from_adguard_file()
+    log_msg("Total dominios obtenidos desde la lista local de AdGuard: " + str(len(domains)))
 
     unblocked_ips = set()
     if os.path.exists(UNBLOCKED_FILE):
