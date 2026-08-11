@@ -1,4 +1,4 @@
-<?php
+<<?php
 
 namespace OPNsense\GameControl\Api;
 
@@ -47,14 +47,14 @@ class ServiceController extends ApiControllerBase
         $leasesFile = "/var/dhcpd/var/db/dhcpd.leases";
         if (file_exists($leasesFile)) {
             $content = file_get_contents($leasesFile);
-            preg_match_all("/lease\s+([0-9\.]+)\s*\{[^}]*hardware\s+ethernet\s+([0-9a-f:]+);[^}]*(?:client-hostname\s+"([^"]+)";)?/i", $content, $matches, PREG_SET_ORDER);
+            preg_match_all("/lease\s+([0-9\.]+)\s*\{[^}]*hardware\s+ethernet\s+([0-9a-f:]+);/i", $content, $matches, PREG_SET_ORDER);
             foreach ($matches as $m) {
                 $ip = $m[1];
                 $ipLong = ip2long($ip);
                 if ($ipLong !== false && $ipLong >= $ipStartLong && $ipLong <= $ipEndLong && !isset($hosts[$ip])) {
                     $isBlocked = isset($unblockedIps[$ip]) && $unblockedIps[$ip] == 0 ? 0 : 1;
                     $hosts[$ip] = array(
-                        "hostname" => !empty($m[3]) ? $m[3] : "Host-" . str_replace(".", "-", $ip),
+                        "hostname" => "Host-" . str_replace(".", "-", $ip),
                         "ip" => $ip,
                         "ip_long" => $ipLong,
                         "mac" => $m[2],
@@ -124,7 +124,6 @@ class ServiceController extends ApiControllerBase
         $unblockedIps = array();
 
         if ((int)$status == 0) {
-            // Habilitar a todos en el rango
             $ipStartLong = ip2long($ipStart);
             $ipEndLong = ip2long($ipEnd);
             if ($ipStartLong !== false && $ipEndLong !== false) {
@@ -133,7 +132,6 @@ class ServiceController extends ApiControllerBase
                 }
             }
         } else {
-            // Bloquear a todos -> lista vacía
             $unblockedIps = array();
         }
 
@@ -161,8 +159,7 @@ class ServiceController extends ApiControllerBase
         $logFile = "/var/log/gamecontrol.log";
         $logContent = file_exists($logFile) ? file_get_contents($logFile) : "No hay registros disponibles.";
 
-        $lines = explode("
-", trim($logContent));
+        $lines = explode("\n", trim($logContent));
         $recentLines = array_slice($lines, -40);
 
         $unblockedFile = "/var/etc/gamecontrol_unblocked.json";
@@ -170,8 +167,7 @@ class ServiceController extends ApiControllerBase
 
         return array(
             "status" => "ok",
-            "logs" => implode("
-", $recentLines),
+            "logs" => implode("\n", $recentLines),
             "unblocked_ips" => json_decode($unblockedContent, true) ?: array()
         );
     }
