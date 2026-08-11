@@ -13,7 +13,7 @@
         });
 
         if (window.location.hash === "#guide") {
-            $("#gamecontrol-tabs a[href=\"#tab-guide\"]").tab("show");
+            $("#gamecontrol-tabs a[href="#tab-guide"]").tab("show");
         }
     });
 
@@ -21,13 +21,19 @@
         var ipStart = $("#ip_start").val() || "192.168.12.101";
         var ipEnd = $("#ip_end").val() || "192.168.12.145";
 
-        $("#student-list").html("<tr><td colspan=\"4\" class=\"text-center\"><i class=\"fa fa-spinner fa-spin\"></i> Cargando equipos en rango " + ipStart + " - " + ipEnd + "...</td></tr>");
+        $("#student-list").html("<tr><td colspan="4" class="text-center"><i class="fa fa-spinner fa-spin"></i> Cargando equipos en rango " + ipStart + " - " + ipEnd + "...</td></tr>");
 
-        $.getJSON("/api/gamecontrol/service/getHosts", { ip_start: ipStart, ip_end: ipEnd }, function(data) {
+        $.ajax({
+            url: "/api/gamecontrol/service/getHosts",
+            type: "GET",
+            data: { ip_start: ipStart, ip_end: ipEnd },
+            dataType: "json",
+            timeout: 5000
+        }).done(function(data) {
             if (data && data.hosts) {
                 var html = "";
                 if (data.hosts.length === 0) {
-                    html = "<tr><td colspan=\"4\" class=\"text-center text-muted\">No se encontraron equipos en este rango de IP.</td></tr>";
+                    html = "<tr><td colspan="4" class="text-center text-muted">No se encontraron equipos en este rango de IP.</td></tr>";
                 } else {
                     $.each(data.hosts, function(i, host) {
                         var isBlocked = host.blocked == 1;
@@ -39,12 +45,12 @@
                         var nextState = isBlocked ? 0 : 1;
 
                         html += "<tr>";
-                        html += "<td style=\"vertical-align: middle;\"><strong>" + host.hostname + "</strong></td>";
-                        html += "<td style=\"vertical-align: middle;\"><span style=\"font-size:14px; font-weight: bold; color:#ffd54f; font-family: monospace;\">" + host.ip + "</span> <small style=\"color:#888;\">(" + host.mac + ")</small></td>";
-                        html += "<td style=\"vertical-align: middle;\"><span class=\"badge\" style=\"" + badgeStyle + " font-size: 12px; padding: 6px 12px; border-radius: 4px;\">" + statusText + "</span></td>";
-                        html += "<td style=\"vertical-align: middle;\">";
-                        html += "<button class=\"btn btn-xs\" style=\"" + btnStyle + " font-weight: 600; padding: 6px 14px; border-radius: 4px;\" onclick=\"toggleStudentGame('" + host.ip + "', " + nextState + ")\">";
-                        html += "<i class=\"fa " + btnIcon + "\"></i> " + btnText;
+                        html += "<td style="vertical-align: middle;"><strong>" + host.hostname + "</strong></td>";
+                        html += "<td style="vertical-align: middle;"><span style="font-size:14px; font-weight: bold; color:#ffd54f; font-family: monospace;">" + host.ip + "</span> <small style="color:#888;">(" + host.mac + ")</small></td>";
+                        html += "<td style="vertical-align: middle;"><span class="badge" style="" + badgeStyle + " font-size: 12px; padding: 6px 12px; border-radius: 4px;">" + statusText + "</span></td>";
+                        html += "<td style="vertical-align: middle;">";
+                        html += "<button class="btn btn-xs" style="" + btnStyle + " font-weight: 600; padding: 6px 14px; border-radius: 4px;" onclick="toggleStudentGame('" + host.ip + "', " + nextState + ")">";
+                        html += "<i class="fa " + btnIcon + ""></i> " + btnText;
                         html += "</button>";
                         html += "</td>";
                         html += "</tr>";
@@ -53,11 +59,13 @@
                 $("#student-list").html(html);
                 $("#host-count").text(data.hosts.length);
             }
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            $("#student-list").html("<tr><td colspan="4" class="text-center text-danger"><i class="fa fa-exclamation-triangle"></i> Error de respuesta de API OPNsense: " + textStatus + " (" + errorThrown + "). Revisa permisos ACL del usuario web.</td></tr>");
         });
     }
 
     function restartEmergencyService() {
-        $("#student-list").html("<tr><td colspan=\"4\" class=\"text-center text-warning\"><i class=\"fa fa-refresh fa-spin\"></i> Sincronizando reglas de AdGuard Home...</td></tr>");
+        $("#student-list").html("<tr><td colspan="4" class="text-center text-warning"><i class="fa fa-refresh fa-spin"></i> Sincronizando reglas de AdGuard Home...</td></tr>");
         $.post("/api/gamecontrol/service/restartService", function(data) {
             loadStudentHosts();
         });
@@ -74,7 +82,7 @@
         var ipEnd = $("#ip_end").val() || "192.168.12.145";
         var msg = blockState === 1 ? "Bloqueando juegos a todos los equipos..." : "Habilitando juegos a todos los equipos...";
 
-        $("#student-list").html("<tr><td colspan=\"4\" class=\"text-center text-info\"><i class=\"fa fa-spinner fa-spin\"></i> " + msg + "</td></tr>");
+        $("#student-list").html("<tr><td colspan="4" class="text-center text-info"><i class="fa fa-spinner fa-spin"></i> " + msg + "</td></tr>");
 
         $.post("/api/gamecontrol/service/setAll", { status: blockState, ip_start: ipStart, ip_end: ipEnd }, function(data) {
             loadStudentHosts();
